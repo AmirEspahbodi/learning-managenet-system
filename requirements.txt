@@ -1,2 +1,9 @@
 django
 environs
+django-phonenumber-field[phonenumberslite]
+django-templated-mail
+djangorestframework
+django-ipware
+ua-parser
+user-agents
+dj-rest-auth

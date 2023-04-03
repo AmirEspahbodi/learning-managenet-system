@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import environs
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,6 +28,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
+    'rest_framework',
+    'phonenumber_field',
+    
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -101,7 +106,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -113,3 +118,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'accounts.User'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+SITE_ID = 1
+
+MY_ADDITIONAL_SETTINGS = {
+    "PASSWORD_MIN_LENGTH" : 10,
+    "Email_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES": 20
+}
