@@ -1,8 +1,9 @@
+import re
 from django.core import validators
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-import re
+from accounts.app_settings import account_settings
 
 
 
@@ -60,8 +61,8 @@ def PostalCodeValidator(value):
 
 def validate_password(password):
     password
-    if len(password) < settings.MY_ADDITIONAL_SETTINGS["PASSWORD_MIN_LENGTH"]:
-        return[ "Password must be a minimum of {0} characters.".format(settings.MY_ADDITIONAL_SETTINGS["PASSWORD_MIN_LENGTH"])]
+    if len(password) < account_settings.PASSWORD_MIN_LENGTH:
+        return[ "Password must be a minimum of {0} characters.".format(account_settings.PASSWORD_MIN_LENGTH)]
     has_upper = False
     has_lower = False
     has_number = False

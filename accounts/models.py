@@ -1,14 +1,15 @@
+import datetime
+from random import randint
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from django.conf import settings
-from .validators import (
+from accounts.app_settings import account_settings
+from accounts.validators import (
     UnicodeUsernameValidator, NationalCodeValidator,
     HomePhoneNumberValidator, PostalCodeValidator)
 from phonenumber_field import modelfields
-import datetime
-from random import randint
+
 
 # Create your models here.
 
@@ -225,47 +226,35 @@ class ConfirmationCodeMixin(models.Model):
         blank=True,
     )
 
-    def code_remainingـtime(self):
+    def code_remaining_time(self):
         remainingـtime = (
-                    self.created_at +
-                    datetime.timedelta(minutes=settings.MY_ADDITIONAL_SETTINGS["Email_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES"]
-                )
+                self.created_at + account_settings.EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES
             ) - datetime.datetime.utcnow()
         return remainingـtime if remainingـtime > datetime.timedelta() else None
 
     class Meta:
         abstract = True
 
+
 class EmailConfirmationCode(ConfirmationCodeMixin):
     def __str__(self):
         return str(self.user)+" | "+str(self.code)
-    
-    @staticmethod
-    def generate_code():
-        """ generate code where does not exist in this table (try at last 5 times)"""
-        code = 0
-        count = 1
-        while True:
-            code = randint(100000, 999999)
-            if EmailConfirmationCode.objects.filter(code=code).count()==0 or count > 5:
-                break
-            count +=1
-        return code
 
 class PasswordResetCode(ConfirmationCodeMixin):
     def __str__(self):
         return str(self.user)+" | "+str(self.code)
-    @staticmethod
-    def generate_code():
-        """ generate code where does not exist in this table"""
-        code = 0
-        count = 1
-        while True:
-            code = randint(100000, 999999)
-            if PasswordResetCode.objects.filter(code=code).count()==0 or count > 5:
-                break
-            count +=1
-        return code
+
+
+def generate_confirmation_code(cls):
+    """ generate code where does not exist in this table (try at last 5 times)"""
+    code = 0
+    count = 1
+    while True:
+        code = randint(100000, 999999)
+        if cls.objects.filter(code=code).count()==0 or count > 5:
+            break
+        count +=1
+    return code
 
 
 def delete_expired_codes(CodeClass):
@@ -275,7 +264,7 @@ def delete_expired_codes(CodeClass):
     """
     code = 0
     for codei in CodeClass.objects.filter().iterator():
-        if codei.code_remainingـtime() is None:
+        if codei.code_remaining_time() is None:
             code = codei.code
             codei.delete()
     return code

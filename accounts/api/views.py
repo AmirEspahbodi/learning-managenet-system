@@ -3,13 +3,17 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from rest_framework.response import Response
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from accounts.authtoken.models import AuthToken
+from accounts.authtoken import views as knoxViews
 from accounts.api.serializers import \
     EmailSerializer,\
     EmailConfirmationCodeSerializer,\
     PasswordResetConfirmSerializer,\
     PasswordResetValidateCodeSerializer,\
-    UserRegisterSerializer
+    UserRegisterSerializer,\
+    UserLoginSerializer
+
 
 from accounts.utils import setUp_user_email_confirmation, setUp_user_password_reset,\
     setUp_user_email_confirmation_complated, compare_stored_user_agent_data_and_request_user_agent_data,\
@@ -17,7 +21,7 @@ from accounts.utils import setUp_user_email_confirmation, setUp_user_password_re
 
 from accounts.models import PasswordResetCode, EmailConfirmationCode, VERIFICATION_STATUS
 
-User = get_user_model()
+UserModel = get_user_model()
 
 
 '''
@@ -35,7 +39,7 @@ class EmailVerificationCodeRequestAPIView(generics.GenericAPIView):
         emailSerializer = EmailSerializer(data=self.request.data)
         emailSerializer.is_valid(raise_exception=True)
         try:
-            user = User.objects.get(email=emailSerializer.data.get("email"))
+            user = UserModel.objects.get(email=emailSerializer.data.get("email"))
         except ObjectDoesNotExist:
             return Response({"message": "There is no user with the given email address"},status=status.HTTP_400_BAD_REQUEST)
         
@@ -45,16 +49,16 @@ class EmailVerificationCodeRequestAPIView(generics.GenericAPIView):
         userEmailConfirmationCode = self.queryset.filter(user=user)
         
         if userEmailConfirmationCode.count()>0:
-            userEmailConfirmationCode.order_by('-expire')
+            userEmailConfirmationCode.order_by('-created_at')
             currentEmailConfirmationCode = None
             for code in userEmailConfirmationCode:
                 if not currentEmailConfirmationCode:
                     currentEmailConfirmationCode = code
                 else:
                     code.delete()
-            code_remainingـtime = currentEmailConfirmationCode.code_remainingـtime()
-            if code_remainingـtime:
-                return Response({"message": f"try in {code_remainingـtime} later"},status=status.HTTP_409_CONFLICT)
+            code_remaining_time = currentEmailConfirmationCode.code_remaining_time()
+            if code_remaining_time:
+                return Response({"message": f"try in {int(code_remaining_time.seconds/60)} minutes and {code_remaining_time.seconds%60} seconds later"},status=status.HTTP_409_CONFLICT)
             else:
                 currentEmailConfirmationCode.delete()
         
@@ -82,7 +86,7 @@ class EmailVerificationConfirmAPIView(generics.GenericAPIView):
         if result.get("status_code") != 200:
             return Response({"message": result["message"]},status=result["status_code"])
         
-        if emailConfirmationCode.code_remainingـtime() is None:
+        if emailConfirmationCode.code_remaining_time() is None:
             emailConfirmationCode.delete()
             return Response({"message":"code is expired"}, status=status.HTTP_400_BAD_REQUEST)
         user = emailConfirmationCode.user
@@ -104,7 +108,7 @@ class PasswordResetCodeRequestAPIView(generics.GenericAPIView):
         emailSerializer = self.serializer_class(data=self.request.data)
         emailSerializer.is_valid(raise_exception=True)
         try:
-            user = User.objects.get(email=emailSerializer.data.get("email"))
+            user = UserModel.objects.get(email=emailSerializer.data.get("email"))
         except ObjectDoesNotExist:
             return Response({"message": "There is no user with the given email address"},status=status.HTTP_400_BAD_REQUEST)
         
@@ -122,9 +126,9 @@ class PasswordResetCodeRequestAPIView(generics.GenericAPIView):
                 else:
                     code.delete()
             
-            code_remainingـtime = currentPasswordResetCode.code_remainingـtime()
-            if code_remainingـtime:
-                return Response({"message": f"try in {code_remainingـtime} later"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            code_remaining_time = currentPasswordResetCode.code_remaining_time()
+            if code_remaining_time:
+                return Response({"message": f"try in {int(code_remaining_time.seconds/60)} minutes and {code_remaining_time.seconds%60} seconds later"}, status=status.HTTP_409_CONFLICT)
             else:
                 currentPasswordResetCode.delete()
         
@@ -145,7 +149,7 @@ class ResetPasswordValidateTokenAPIView(generics.GenericAPIView):
         except ObjectDoesNotExist:
             return Response({"message":"code in wrong"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if passwordResetCode.code_remainingـtime() is None:
+        if passwordResetCode.code_remaining_time() is None:
             passwordResetCode.delete()
             return Response({"message":"code is expired"}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -169,7 +173,7 @@ class ResetPasswordConfirmAPIView(generics.GenericAPIView):
         except ObjectDoesNotExist:
             return Response({"message":"code in wrong"}, status=status.HTTP_400_BAD_REQUEST)
         
-        if passwordResetCode.code_remainingـtime() is None:
+        if passwordResetCode.code_remaining_time() is None:
             passwordResetCode.delete()
             return Response({"message":"code is expired"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -181,17 +185,18 @@ class ResetPasswordConfirmAPIView(generics.GenericAPIView):
         
         user = passwordResetCode.user
         password = passwordResetProcessSerializer.data.get("password1")
+        if user.check_password(password):
+            return Response({"message":"The new password must not be the same as the previous password"}, status=status.HTTP_400_BAD_REQUEST)
+        
         user.set_password(password)
         user.save()
+        AuthToken.objects.filter(user=user).delete()
         passwordResetCode.delete()
         setUp_user_password_reset_complated(user)
         return Response({"status":"password reset was successful"}, status=status.HTTP_200_OK)
 
 
-# from dj_rest_auth.registration import views
-# from dj_rest_auth import views
-
-class UserRegisterView(generics.GenericAPIView):
+class UserRegisterAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = UserRegisterSerializer
     def post(self, *args, **kwargs):
@@ -199,3 +204,31 @@ class UserRegisterView(generics.GenericAPIView):
         userRegisterSerializer.is_valid(raise_exception=True)
         userRegisterSerializer.save()
         return Response({"status":"Ok"}, status=status.HTTP_201_CREATED)
+
+
+class UserLoginAPIView(knoxViews.LoginView):
+    permission_classes = (AllowAny,)
+    serializer_class = UserLoginSerializer
+
+    def post (self, *args, **kwargs):
+        self.userLoginSerializer = self.serializer_class(data=self.request.data)
+        self.userLoginSerializer.is_valid(raise_exception=True)
+        self.user = self.userLoginSerializer.validated_data.get("user")
+        
+        re = self.check_exceeding_the_token_limit()
+        if re:
+            return re
+        
+        self.remove_axpired_token_user()
+
+        instance, token = self.create_token()
+        
+        data = self.get_post_response_data(self.request, token, instance)
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class IsUserAuthenticated(generics.GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+    def get(self, *args, **kwargs):
+        return Response({"yes you are!"})

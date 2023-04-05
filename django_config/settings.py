@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'phonenumber_field',
     
     'accounts',
+    'accounts.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -125,7 +126,11 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 SITE_ID = 1
 
-MY_ADDITIONAL_SETTINGS = {
-    "PASSWORD_MIN_LENGTH" : 10,
-    "Email_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES": 20
+
+AUTHENTICATION_BACKENDS = ['accounts.backends.MyModelBackend']
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'accounts.authtoken.auth.TokenAuthentication',
+    ),
 }

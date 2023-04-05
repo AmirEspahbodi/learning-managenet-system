@@ -6,4 +6,3 @@ djangorestframework
 django-ipware
 ua-parser
 user-agents
-dj-rest-auth

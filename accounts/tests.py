@@ -2,7 +2,7 @@ from django.test import TestCase, RequestFactory
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
 from accounts.api.views import (
-    UserRegisterView
+    UserRegisterAPIView
 )
 
 # Create your tests here.
@@ -19,7 +19,7 @@ class UserObjectTestCase(TestCase):
             content_type='application/json',
             data=data
         )
-        response  = UserRegisterView.as_view()(request)
+        response  = UserRegisterAPIView.as_view()(request)
         return response
     
     def test_register_endpoint_status_code(self):

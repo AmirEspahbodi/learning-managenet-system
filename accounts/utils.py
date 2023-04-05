@@ -1,13 +1,4 @@
-# from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.contrib.sites.models import Site
-# from django.utils.http import urlsafe_base64_encode 
-# from django.utils.encoding import force_bytes
-from django.conf import settings
-from templated_mail.mail import BaseEmailMessage
-from django.core.exceptions import ObjectDoesNotExist
-from .models import EmailConfirmationCode, PasswordResetCode
 from ipware import get_client_ip
-from random import randint
 from user_agents import parse
 import sys
 import json
@@ -16,6 +7,15 @@ if sys.version_info[0] == 3:
     text_type = str
 else:
     text_type = unicode
+# from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.sites.models import Site
+# from django.utils.http import urlsafe_base64_encode 
+# from django.utils.encoding import force_bytes
+from django.conf import settings
+from templated_mail.mail import BaseEmailMessage
+# from django.core.exceptions import ObjectDoesNotExist
+from accounts.models import EmailConfirmationCode, PasswordResetCode, generate_confirmation_code
+
     
 ############## V0: token web base (no db)
 # class AcconutActivationToken(PasswordResetTokenGenerator):
@@ -140,9 +140,7 @@ def compare_stored_user_agent_data_and_request_user_agent_data(codeInstance, req
     """
     current_client_ip, current_is_routable, current_user_agent_data = get_ip_and_user_agent(request) if request else (None, None, None)
 
-    print("here --------------- "+str(codeInstance.user_agent))
     storred_client_ip , storred_user_agent_data = (codeInstance.ip_address, json.loads(codeInstance.user_agent.replace("\'", "\"")))
-    print("here --------------- "+str(storred_user_agent_data))
 
     if not (storred_client_ip == current_client_ip or storred_client_ip==current_is_routable):
         return {"message":"do not change your ip address during process", "status_code":403}
@@ -162,14 +160,13 @@ def setUp_user_email_password_confirmation(ConfirmationCode, Email, user, reques
     return proccess result.
     """
     client_ip, is_routable, user_agent_data = get_ip_and_user_agent(request) if request else (None, None, None)
-    code = ConfirmationCode.generate_code()
+    code = generate_confirmation_code(ConfirmationCode)
     if code==0:
         """
         If the function fails to generate a six-digit code, it means that most of the digits in the range are reserved
         try to remove expire codes and return one of the deleted code
         """
         from accounts.models import delete_expired_codes
-
         code = delete_expired_codes(ConfirmationCode)
         """
         if there is no expired code we must tell user try again later!
@@ -180,17 +177,17 @@ def setUp_user_email_password_confirmation(ConfirmationCode, Email, user, reques
                 "status_code": 409
             }
 
-    new_email_token = ConfirmationCode(
+    confirmationCode = ConfirmationCode(
         user=user,
         code=code,
         ip_address= client_ip if client_ip else is_routable if is_routable else "private",
         user_agent= user_agent_data if user_agent_data else '{}'
     )
-    new_email_token.save()
+    confirmationCode.save()
     Email(
         context={
             'user':user,
-            'code': new_email_token.code
+            'code': confirmationCode.code
         }
     ).send(to=[user.email])
     return {
