@@ -4,22 +4,11 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.response import Response
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from accounts.authtoken.models import AuthToken
 from accounts.authtoken import views as knoxViews
-from accounts.api.serializers import \
-    EmailSerializer,\
-    EmailConfirmationCodeSerializer,\
-    PasswordResetConfirmSerializer,\
-    PasswordResetValidateCodeSerializer,\
-    UserRegisterSerializer,\
-    UserLoginSerializer
-
-
-from accounts.utils import setUp_user_email_confirmation, setUp_user_password_reset,\
-    setUp_user_email_confirmation_complated, compare_stored_user_agent_data_and_request_user_agent_data,\
-    setUp_user_password_reset_complated
-
-from accounts.models import PasswordResetCode, EmailConfirmationCode, VERIFICATION_STATUS
+from accounts.app_settings import account_settings
+from accounts import utils
 
 UserModel = get_user_model()
 
@@ -33,10 +22,10 @@ serializer class, model, setUp function
 # ********** EMAIL CONFIRMATION
 class EmailVerificationCodeRequestAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = EmailSerializer
-    queryset = EmailConfirmationCode.objects.filter()
+    serializer_class = account_settings.SERIALIZERS.EMAIL
+    queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
     def post(self, *args, **kwargs):
-        emailSerializer = EmailSerializer(data=self.request.data)
+        emailSerializer = self.serializer_class(data=self.request.data)
         emailSerializer.is_valid(raise_exception=True)
         try:
             user = UserModel.objects.get(email=emailSerializer.data.get("email"))
@@ -64,14 +53,14 @@ class EmailVerificationCodeRequestAPIView(generics.GenericAPIView):
         
         if user.is_email_verified() :
             return Response({"message": "Your email was confirmed"},status=status.HTTP_400_BAD_REQUEST)
-        result = setUp_user_email_confirmation(user, self.request)
+        result = utils.setUp_user_email_confirmation(user, self.request)
         return Response({"message": result["message"]},status=result["status_code"])
 
 
 class EmailVerificationConfirmAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = EmailConfirmationCodeSerializer
-    queryset = EmailConfirmationCode.objects.filter()
+    serializer_class = account_settings.SERIALIZERS.EMAIL_VERIFICATION_CODE
+    queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
     def post(self, *args, **kwargs):
         confirmationCodeSerializer = self.serializer_class(data=self.request.data)
         confirmationCodeSerializer.is_valid(raise_exception=True)
@@ -82,7 +71,7 @@ class EmailVerificationConfirmAPIView(generics.GenericAPIView):
         
         # Checking whether the request IP address or user agent data
         # is different from the what ever stored in the database for that code
-        result = compare_stored_user_agent_data_and_request_user_agent_data(emailConfirmationCode, self.request)
+        result = utils.compare_user_agents_data(emailConfirmationCode, self.request)
         if result.get("status_code") != 200:
             return Response({"message": result["message"]},status=result["status_code"])
         
@@ -92,18 +81,18 @@ class EmailVerificationConfirmAPIView(generics.GenericAPIView):
         user = emailConfirmationCode.user
         if user.is_email_verified():
             return Response({"message":"Your email was confirmed"}, status=status.HTTP_400_BAD_REQUEST)
-        user.verification_status = user.verification_status * VERIFICATION_STATUS.EMAIL
+        user.verification_status = user.verification_status * account_settings.MODELS.VERIFICATION_STATUS.EMAIL
         user.save()
         emailConfirmationCode.delete()
-        setUp_user_email_confirmation_complated(user)
+        utils.setUp_user_email_confirmation_complated(user)
         return Response({"message":"Email has been successfully verified"}, status=status.HTTP_200_OK)
 
 
 # ********** PASSWORD REST
 class PasswordResetCodeRequestAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = EmailSerializer
-    queryset = PasswordResetCode.objects.filter()
+    serializer_class = account_settings.SERIALIZERS.EMAIL
+    queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
     def post(self, *args, **kwargs):
         emailSerializer = self.serializer_class(data=self.request.data)
         emailSerializer.is_valid(raise_exception=True)
@@ -132,14 +121,14 @@ class PasswordResetCodeRequestAPIView(generics.GenericAPIView):
             else:
                 currentPasswordResetCode.delete()
         
-        result = setUp_user_password_reset(user, self.request)
+        result = utils.setUp_user_password_reset(user, self.request)
         return Response({"message": result["message"]},status=result["status_code"])
 
 
-class ResetPasswordValidateTokenAPIView(generics.GenericAPIView):
+class ResetPasswordVerifyCodeAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = PasswordResetValidateCodeSerializer
-    queryset = PasswordResetCode.objects.filter()
+    serializer_class = account_settings.SERIALIZERS.PASWORD_RESET_VERIFY_CODE
+    queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
     def post(self, *args, **kwargs):
         passwordResetProcessSerializer = self.serializer_class(data=self.request.data)
         passwordResetProcessSerializer.is_valid(raise_exception=True)
@@ -153,7 +142,7 @@ class ResetPasswordValidateTokenAPIView(generics.GenericAPIView):
             passwordResetCode.delete()
             return Response({"message":"code is expired"}, status=status.HTTP_400_BAD_REQUEST)
         
-        result = compare_stored_user_agent_data_and_request_user_agent_data(passwordResetCode, self.request)
+        result = utils.compare_user_agents_data(passwordResetCode, self.request)
         if result.get("status_code") != 200:
             return Response({"message": result["message"]},status=result["status_code"])
         
@@ -162,8 +151,8 @@ class ResetPasswordValidateTokenAPIView(generics.GenericAPIView):
 
 class ResetPasswordConfirmAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = PasswordResetConfirmSerializer
-    queryset = PasswordResetCode.objects.filter()
+    serializer_class = account_settings.SERIALIZERS.PASSWORD_RESET_CONFIRM
+    queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
     def post(self, *args, **kwargs):
         passwordResetProcessSerializer = self.serializer_class(data=self.request.data)
         passwordResetProcessSerializer.is_valid(raise_exception=True)
@@ -179,7 +168,7 @@ class ResetPasswordConfirmAPIView(generics.GenericAPIView):
 
         # Checking whether the request IP address or user agent data
         # is different from the what ever stored in the database for that code
-        result = compare_stored_user_agent_data_and_request_user_agent_data(passwordResetCode, self.request)
+        result = utils.compare_user_agents_data(passwordResetCode, self.request)
         if result.get("status_code") != 200:
             return Response({"message": result["message"]},status=result["status_code"])
         
@@ -192,13 +181,13 @@ class ResetPasswordConfirmAPIView(generics.GenericAPIView):
         user.save()
         AuthToken.objects.filter(user=user).delete()
         passwordResetCode.delete()
-        setUp_user_password_reset_complated(user)
+        utils.setUp_user_password_reset_complated(user)
         return Response({"status":"password reset was successful"}, status=status.HTTP_200_OK)
 
 
 class UserRegisterAPIView(generics.GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = UserRegisterSerializer
+    serializer_class = account_settings.SERIALIZERS.USER_REGISTER
     def post(self, *args, **kwargs):
         userRegisterSerializer = self.serializer_class(data=self.request.data)
         userRegisterSerializer.is_valid(raise_exception=True)
@@ -208,7 +197,7 @@ class UserRegisterAPIView(generics.GenericAPIView):
 
 class UserLoginAPIView(knoxViews.LoginView):
     permission_classes = (AllowAny,)
-    serializer_class = UserLoginSerializer
+    serializer_class = account_settings.SERIALIZERS.USER_LOGIN
 
     def post (self, *args, **kwargs):
         self.userLoginSerializer = self.serializer_class(data=self.request.data)

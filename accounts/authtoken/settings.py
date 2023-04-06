@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.conf import settings
 from django.test.signals import setting_changed
 from rest_framework.settings import APISettings, api_settings
+from accounts.app_settings import ObjDict
+
 
 USER_SETTINGS = getattr(settings, 'REST_KNOX', None)
 
@@ -11,7 +13,11 @@ DEFAULTS = {
     'AUTH_TOKEN_CHARACTER_LENGTH': 64,
     'TOKEN_TTL': timedelta(hours=10),
     'LAST_USE_TO_EXPIRY': timedelta(minutes=2),
-    'USER_SERIALIZER': None,
+    'SERIALIZER': ObjDict(
+        {
+            'USER_SERIALIZER': None
+        }
+    ),
     'TOKEN_LIMIT_PER_USER': 10,
     'AUTO_REFRESH': False,
     'MIN_REFRESH_INTERVAL': 60,
@@ -23,7 +29,6 @@ DEFAULTS = {
 
 IMPORT_STRINGS = {
     'SECURE_HASH_ALGORITHM',
-    'USER_SERIALIZER',
     'TOKEN_MODEL',
 }
 

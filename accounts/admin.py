@@ -24,23 +24,23 @@ class UserAdmin(UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("username", "email",  "phone_number", "password1", "password2"),
+                "fields": ("username", "email",  "phone_number", "role", "password1", "password2"),
             },
         ),
     )
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name", "email",)}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone_number")}),
         (
             _("Permissions"),
             {
                 "fields": (
                     "is_active",
                     "is_superuser",
-                    "groups",
-                    "user_permissions",
                     "role",
-                    "verification_status"
+                    "verification_status",
+                    "groups",
+                    "user_permissions"
                 ),
             },
         ),

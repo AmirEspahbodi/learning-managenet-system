@@ -14,9 +14,9 @@ from django.contrib.sites.models import Site
 from django.conf import settings
 from templated_mail.mail import BaseEmailMessage
 # from django.core.exceptions import ObjectDoesNotExist
-from accounts.models import EmailConfirmationCode, PasswordResetCode, generate_confirmation_code
+from accounts.models import generate_confirmation_code
+from accounts.app_settings import account_settings
 
-    
 ############## V0: token web base (no db)
 # class AcconutActivationToken(PasswordResetTokenGenerator):
 #     def _make_hash_value(self, user, timestamp: int):
@@ -70,7 +70,7 @@ class PasswordResetComplatedEmail(BaseEmailMessage):
         return context
 
 def setUp_user_password_resetV1(user):
-    new_password_token = PasswordResetCode(user=user)
+    new_password_token = account_settings.MODELS.PASSWORD_RESET_CODE(user=user)
     new_password_token.save()
     PasswordResetEmailV1(
         context={
@@ -133,7 +133,7 @@ def get_ip_and_user_agent(request):
     
     return (client_ip, is_routable, user_agent_data)
 
-def compare_stored_user_agent_data_and_request_user_agent_data(codeInstance, request):
+def compare_user_agents_data(codeInstance, request):
     """
     Checking whether the request IP address or user agent data
     is different from the what ever stored in the database for that code
@@ -197,8 +197,12 @@ def setUp_user_email_password_confirmation(ConfirmationCode, Email, user, reques
 
 
 def setUp_user_email_confirmation(user, request=None):
-    return setUp_user_email_password_confirmation(EmailConfirmationCode, ActivationEmail, user, request)
+    return setUp_user_email_password_confirmation(
+        account_settings.MODELS.EMAIL_VERIFICATION_CODE,
+        ActivationEmail, user, request)
 
 
 def setUp_user_password_reset(user, request=None):
-    return setUp_user_email_password_confirmation(PasswordResetCode, PasswordResetEmail, user, request)
+    return setUp_user_email_password_confirmation(
+        account_settings.MODELS.PASSWORD_RESET_CODE,
+        PasswordResetEmail, user, request)
