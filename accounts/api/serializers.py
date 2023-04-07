@@ -1,12 +1,13 @@
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model, authenticate, password_validation
 from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.forms import SetPasswordForm
 from rest_framework import exceptions, serializers
-from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from phonenumber_field.validators import validate_international_phonenumber
 from accounts.validators import validate_password, validate_6_digit_code, UnicodeUsernameValidator
-
+from accounts.app_settings import account_settings
 
 UserModel = get_user_model()
 
@@ -18,21 +19,70 @@ class EmailConfirmationCodeSerializer(serializers.Serializer):
     code = serializers.IntegerField(required=True)
 
 
-class PasswordResetValidateCodeSerializer(serializers.Serializer):
+class PasswordResetVerifyCodeSerializer(serializers.Serializer):
     code = serializers.CharField(validators=[validate_6_digit_code])
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     code = serializers.IntegerField(required=True)
-    password1 = serializers.CharField(required=True, validators=[validate_password])
-    password2 = serializers.CharField(required=True)
-    def validate(self, data, *args, **kwargs):
-        if data['password1'] != data['password2']:
-            raise serializers.ValidationError(
-                "The two password fields didn't match."
-            )
-        
-        return data
+    new_password1 = serializers.CharField(required=True, validators=[validate_password])
+    new_password2 = serializers.CharField(required=True)
+    set_password_form_class = SetPasswordForm
+
+    def validate(self, attrs):
+        try:
+            resetCode = account_settings.MODELS.PASSWORD_RESET_CODE.objects.get(code=attrs['code'])
+        except ObjectDoesNotExist:
+            raise ValidationError('wrong code')
+        self.set_password_form = self.set_password_form_class(
+            user=resetCode.user, data=attrs,
+        )
+
+        if not self.set_password_form.is_valid():
+            raise serializers.ValidationError(self.set_password_form.errors)
+        attrs['verificationCode']=resetCode
+        print(f"attrs = {attrs}")
+        return attrs
+
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField(max_length=128)
+    new_password1 = serializers.CharField(max_length=128, validators=[validate_password])
+    new_password2 = serializers.CharField(max_length=128)
+
+    set_password_form_class = SetPasswordForm
+    set_password_form = None
+
+    def __init__(self, *args, **kwargs):
+        self.old_password_field_enabled = account_settings.OLD_PASSWORD_FIELD_ENABLED
+        super().__init__(*args, **kwargs)
+
+        if not self.old_password_field_enabled:
+            self.fields.pop('old_password')
+
+        self.request = self.context.get('request')
+        self.user = getattr(self.request, 'user', None)
+
+    def validate_old_password(self, value):
+        invalid_password_conditions = (
+            self.old_password_field_enabled,
+            self.user,
+            not self.user.check_password(value),
+        )
+
+        if all(invalid_password_conditions):
+            err_msg = _('Your old password was entered incorrectly. Please enter it again.')
+            raise serializers.ValidationError(err_msg)
+        return value
+
+    def validate(self, attrs):
+        self.set_password_form = self.set_password_form_class(
+            user=self.user, data=attrs,
+        )
+
+        if not self.set_password_form.is_valid():
+            raise serializers.ValidationError(self.set_password_form.errors)
+        return attrs
+
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):

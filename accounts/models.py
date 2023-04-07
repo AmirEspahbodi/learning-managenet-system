@@ -200,7 +200,8 @@ class UserInformation(models.Model):
         blank=True, null=True
     )
 
-class ConfirmationCodeMixin(models.Model):
+
+class VerificationCodeMixin(models.Model):
     code = models.CharField(
         unique=True,
         max_length=6
@@ -225,7 +226,9 @@ class ConfirmationCodeMixin(models.Model):
         default="",
         blank=True,
     )
-
+    resended = models.PositiveSmallIntegerField(
+        default=0
+    )
     def code_remaining_time(self):
         remainingـtime = (
                 self.created_at + account_settings.EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES
@@ -236,16 +239,16 @@ class ConfirmationCodeMixin(models.Model):
         abstract = True
 
 
-class EmailConfirmationCode(ConfirmationCodeMixin):
+class EmailVerificationCode(VerificationCodeMixin):
     def __str__(self):
         return str(self.user)+" | "+str(self.code)
 
-class PasswordResetCode(ConfirmationCodeMixin):
+class PasswordResetCode(VerificationCodeMixin):
     def __str__(self):
         return str(self.user)+" | "+str(self.code)
 
 
-def generate_confirmation_code(cls):
+def generate_verification_code(cls):
     """ generate code where does not exist in this table (try at last 5 times)"""
     code = 0
     count = 1

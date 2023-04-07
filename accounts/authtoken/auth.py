@@ -15,7 +15,7 @@ from rest_framework.authentication import (
 
 from accounts.authtoken.crypto import hash_token
 from accounts.authtoken.models import AuthToken
-from accounts.authtoken.settings import CONSTANTS, knox_settings
+from accounts.authtoken.app_settings import CONSTANTS, token_settings
 from accounts.authtoken.signals import token_expired
 
 
@@ -35,7 +35,7 @@ class TokenAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
         auth = get_authorization_header(request).split()
-        prefix = knox_settings.AUTH_HEADER_PREFIX.encode()
+        prefix = token_settings.AUTH_HEADER_PREFIX.encode()
 
         if not auth:
             return None
@@ -72,18 +72,18 @@ class TokenAuthentication(BaseAuthentication):
             except (TypeError, binascii.Error):
                 raise exceptions.AuthenticationFailed(msg)
             if compare_digest(digest, auth_token.digest):
-                if knox_settings.AUTO_REFRESH and auth_token.expiry:
+                if token_settings.AUTO_REFRESH and auth_token.expiry:
                     self.renew_token(auth_token)
                 return self.validate_user(auth_token)
         raise exceptions.AuthenticationFailed(msg)
 
     def renew_token(self, auth_token):
         current_expiry = auth_token.expiry
-        new_expiry = datetime.now() + knox_settings.TOKEN_TTL
+        new_expiry = datetime.now() + token_settings.TOKEN_TTL
         auth_token.expiry = new_expiry
         # Throttle refreshing of token to avoid db writes
         delta = (new_expiry - current_expiry).total_seconds()
-        if delta > knox_settings.MIN_REFRESH_INTERVAL:
+        if delta > token_settings.MIN_REFRESH_INTERVAL:
             auth_token.save(update_fields=('expiry',))
     
     def validate_user(self, auth_token):
@@ -94,24 +94,15 @@ class TokenAuthentication(BaseAuthentication):
         return (auth_token.user, auth_token)
 
     def authenticate_header(self, request):
-        return knox_settings.AUTH_HEADER_PREFIX
+        return token_settings.AUTH_HEADER_PREFIX
 
     def token_not_ok(self, auth_token):
-        
-        # move this logic to LoginView. when user is loged in we will delete expired tokens, it's better for performance!
-        # for other_token in auth_token.user.auth_token_set.all():
-        #     if other_token.digest != auth_token.digest and other_token.expiry:
-        #         if other_token.expiry < timezone.now() or (other_token.last_use + knox_settings.LAST_USE_TO_EXPIRY) < timezone.now():
-        #             other_token.delete()
-        #             username = other_token.user.get_username()
-        #             token_expired.send(sender=self.__class__,
-        #                                username=username, source="other_token")
-        
-        if auth_token.expiry < datetime.now() or (auth_token.last_use + knox_settings.LAST_USE_TO_EXPIRY) < datetime.now():
+        if auth_token.expiry < datetime.now() or (auth_token.last_use + token_settings.LAST_USE_TO_EXPIRY) < datetime.now():
             username = auth_token.user.get_username()
             auth_token.delete()
             token_expired.send(sender=self.__class__,
                                 username=username, source="auth_token")
             return True
-    
+        # update time to expire
+        auth_token.save()
         return False

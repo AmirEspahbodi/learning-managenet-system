@@ -1,223 +1,295 @@
+from datetime import datetime
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.signals import user_logged_in,user_logged_out
+from django.db.models import Q
+from rest_framework.serializers import DateTimeField
 from rest_framework.response import Response
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 
-from accounts.authtoken.models import AuthToken
-from accounts.authtoken import views as knoxViews
 from accounts.app_settings import account_settings
+from accounts.authtoken.app_settings import token_settings
 from accounts import utils
 
 UserModel = get_user_model()
 
 
-'''
-for futue
-دو تا کلاس گرفتن کد تایید برای ایمیل و ریست رمز عبور مشترکات زیادی دارن و تو دو سه نقطه با هم فرق دارن
-serializer class, model, setUp function
-'''
-
-# ********** EMAIL CONFIRMATION
-class EmailVerificationCodeRequestAPIView(generics.GenericAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = account_settings.SERIALIZERS.EMAIL
-    queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
-    def post(self, *args, **kwargs):
-        emailSerializer = self.serializer_class(data=self.request.data)
-        emailSerializer.is_valid(raise_exception=True)
-        try:
-            user = UserModel.objects.get(email=emailSerializer.data.get("email"))
-        except ObjectDoesNotExist:
-            return Response({"message": "There is no user with the given email address"},status=status.HTTP_400_BAD_REQUEST)
-        
-        if not user.is_active:
-            return Response({"message":"Your account is inactive"}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        
-        userEmailConfirmationCode = self.queryset.filter(user=user)
-        
-        if userEmailConfirmationCode.count()>0:
-            userEmailConfirmationCode.order_by('-created_at')
-            currentEmailConfirmationCode = None
-            for code in userEmailConfirmationCode:
-                if not currentEmailConfirmationCode:
-                    currentEmailConfirmationCode = code
-                else:
-                    code.delete()
-            code_remaining_time = currentEmailConfirmationCode.code_remaining_time()
-            if code_remaining_time:
-                return Response({"message": f"try in {int(code_remaining_time.seconds/60)} minutes and {code_remaining_time.seconds%60} seconds later"},status=status.HTTP_409_CONFLICT)
-            else:
-                currentEmailConfirmationCode.delete()
-        
-        if user.is_email_verified() :
-            return Response({"message": "Your email was confirmed"},status=status.HTTP_400_BAD_REQUEST)
-        result = utils.setUp_user_email_confirmation(user, self.request)
-        return Response({"message": result["message"]},status=result["status_code"])
-
-
-class EmailVerificationConfirmAPIView(generics.GenericAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = account_settings.SERIALIZERS.EMAIL_VERIFICATION_CODE
-    queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
-    def post(self, *args, **kwargs):
-        confirmationCodeSerializer = self.serializer_class(data=self.request.data)
-        confirmationCodeSerializer.is_valid(raise_exception=True)
-        try:
-            emailConfirmationCode = self.queryset.get(code=confirmationCodeSerializer.data.get("code"))
-        except ObjectDoesNotExist:
-            return Response({"message":"wrong code"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+class VerifyVerificationCodeMixin:
+    def verify_verification_code(self, code=None, verificationCode=None, delete_code=True):
+        print
+        if not verificationCode:
+            try:
+                verificationCode = self.queryset.get(code=code)
+            except ObjectDoesNotExist:
+                return {
+                    "detail":"wrong code",
+                    "status_code": status.HTTP_406_NOT_ACCEPTABLE
+                }
+            if verificationCode.code_remaining_time() is None:
+                verificationCode.delete()
+                return {"detail":"code is expired", "status_code":status.HTTP_400_BAD_REQUEST}
         
         # Checking whether the request IP address or user agent data
         # is different from the what ever stored in the database for that code
-        result = utils.compare_user_agents_data(emailConfirmationCode, self.request)
+        result = utils.compare_user_agents_data(verificationCode, self.request)
         if result.get("status_code") != 200:
-            return Response({"message": result["message"]},status=result["status_code"])
+            return {"detail": result["message"], "status_code":result["status_code"]}
+        self.user = verificationCode.user
+        if delete_code:
+            verificationCode.delete()
+        return {'detail': 'code is ok', 'status_code':200}
+
+
+class CreateTokenMixin:
+    def get_context(self):
+        return {'request': self.request, 'format': self.format_kwarg, 'view': self}
+
+    def get_token_ttl(self):
+        return token_settings.TOKEN_TTL
+
+    def get_token_prefix(self):
+        return token_settings.TOKEN_PREFIX
+
+    def get_token_limit_per_user(self):
+        return token_settings.TOKEN_LIMIT_PER_USER
+
+    def get_user_serializer_class(self):
+        return token_settings.USER_SERIALIZER
+
+    def get_expiry_datetime_format(self):
+        return token_settings.EXPIRY_DATETIME_FORMAT
+
+    def format_expiry_datetime(self, expiry):
+        datetime_format = self.get_expiry_datetime_format()
+        return DateTimeField(format=datetime_format).to_representation(expiry)
+
+    def create_token(self):
+        instance, token = account_settings.MODELS.AUTH_TOKEN.objects.create(
+            user=self.user,
+            prefix=self.get_token_prefix()
+        )
+        (client_ip, is_routable, user_agent_data) = utils.get_ip_and_user_agent(self.request)
+        account_settings.MODELS.AUTH_TOKEN_INFORMATION.objects.create(
+            authToken = instance,
+            ip_address = client_ip if client_ip else is_routable,
+            user_agent = user_agent_data,
+        )
+        user_logged_in.send(sender=self.user.__class__,
+                    request=self.request, user=self.user)
+        return instance, token
+
+    def get_post_response_data(self, request, token, instance):
+        return {
+            'expiry': self.format_expiry_datetime(instance.expiry),
+            'not_use_expire_minuts': int(token_settings.LAST_USE_TO_EXPIRY.seconds/60),
+            'token_key': token
+        }
+
+
+# ********** EMAIL VERIFICATION
+class EmailVerificationCodeRequestAPIView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = account_settings.SERIALIZERS.EMAIL
+    queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = UserModel.objects.get(email=serializer.data.get("email"))
+        except ObjectDoesNotExist:
+            return Response({"detail": _("There is no user with the given email address")},status=status.HTTP_400_BAD_REQUEST)
         
-        if emailConfirmationCode.code_remaining_time() is None:
-            emailConfirmationCode.delete()
-            return Response({"message":"code is expired"}, status=status.HTTP_400_BAD_REQUEST)
-        user = emailConfirmationCode.user
-        if user.is_email_verified():
-            return Response({"message":"Your email was confirmed"}, status=status.HTTP_400_BAD_REQUEST)
-        user.verification_status = user.verification_status * account_settings.MODELS.VERIFICATION_STATUS.EMAIL
-        user.save()
-        emailConfirmationCode.delete()
-        utils.setUp_user_email_confirmation_complated(user)
-        return Response({"message":"Email has been successfully verified"}, status=status.HTTP_200_OK)
+        if not user.is_active:
+            return Response({"detail": _("Your account is inactive")}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        if user.is_email_verified() :
+            return Response({"detail": _("Your email was verified")},status=status.HTTP_400_BAD_REQUEST)
+        
+        result = utils.setUp_user_email_verification_code(user, request)
+        return Response(*result)
+
+
+class EmailVerificationConfirmAPIView(GenericAPIView, VerifyVerificationCodeMixin):
+    permission_classes = [AllowAny]
+    serializer_class = account_settings.SERIALIZERS.EMAIL_VERIFICATION_CODE
+    queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.data.get("code")
+        result = self.verify_verification_code(code)
+        if result['status_code'] == 200:
+            if self.user.is_email_verified():
+                return Response({"detail":_("Your email was confirmed")}, status=status.HTTP_400_BAD_REQUEST)
+            self.user.verification_status = self.user.verification_status * account_settings.MODELS.VERIFICATION_STATUS.EMAIL
+            self.user.save()
+            utils.setUp_user_email_verification_complated(self.user)
+            return Response({"detail":_("Email has been successfully verified")}, status=status.HTTP_200_OK)
+        return Response(result["detail"], status=result['status_code'])
 
 
 # ********** PASSWORD REST
-class PasswordResetCodeRequestAPIView(generics.GenericAPIView):
+class PasswordResetCodeRequestAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = account_settings.SERIALIZERS.EMAIL
     queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
-    def post(self, *args, **kwargs):
-        emailSerializer = self.serializer_class(data=self.request.data)
-        emailSerializer.is_valid(raise_exception=True)
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        
         try:
-            user = UserModel.objects.get(email=emailSerializer.data.get("email"))
+            user = UserModel.objects.get(email=serializer.data.get("email"))
         except ObjectDoesNotExist:
-            return Response({"message": "There is no user with the given email address"},status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({"detail": _("There is no user with the given email address")},status=status.HTTP_400_BAD_REQUEST)
+
         if not user.is_active:
-            return Response({"message":"Your account is inactive"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response({"detail":_("Your account is inactive")}, status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        userPasswordResetCode = self.queryset.filter(user = user)
+        if not user.is_email_verified():
+            return Response({"detail":_("E-mail is not verified!")}, status=status.HTTP_406_NOT_ACCEPTABLE)
         
-        if userPasswordResetCode:
-            userPasswordResetCode.order_by('-created_at')
-            currentPasswordResetCode = None
-            for code in userPasswordResetCode:
-                if not currentPasswordResetCode:
-                    currentPasswordResetCode = code
-                else:
-                    code.delete()
-            
-            code_remaining_time = currentPasswordResetCode.code_remaining_time()
-            if code_remaining_time:
-                return Response({"message": f"try in {int(code_remaining_time.seconds/60)} minutes and {code_remaining_time.seconds%60} seconds later"}, status=status.HTTP_409_CONFLICT)
-            else:
-                currentPasswordResetCode.delete()
-        
-        result = utils.setUp_user_password_reset(user, self.request)
-        return Response({"message": result["message"]},status=result["status_code"])
+        result = utils.setUp_user_password_reset_verification_code(user, request)
+        return Response(*result)
 
 
-class ResetPasswordVerifyCodeAPIView(generics.GenericAPIView):
+class ResetPasswordVerifyCodeAPIView(GenericAPIView, VerifyVerificationCodeMixin):
     permission_classes = [AllowAny]
     serializer_class = account_settings.SERIALIZERS.PASWORD_RESET_VERIFY_CODE
     queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
     def post(self, *args, **kwargs):
-        passwordResetProcessSerializer = self.serializer_class(data=self.request.data)
-        passwordResetProcessSerializer.is_valid(raise_exception=True)
-        try:
-            code = passwordResetProcessSerializer.data.get("code")
-            passwordResetCode = self.queryset.get(code=code)
-        except ObjectDoesNotExist:
-            return Response({"message":"code in wrong"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if passwordResetCode.code_remaining_time() is None:
-            passwordResetCode.delete()
-            return Response({"message":"code is expired"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        result = utils.compare_user_agents_data(passwordResetCode, self.request)
-        if result.get("status_code") != 200:
-            return Response({"message": result["message"]},status=result["status_code"])
-        
-        return Response({"message":"OK"}, status=status.HTTP_100_CONTINUE)
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.data.get("code")
+        result = self.verify_verification_code(code=code, delete_code=False)
+        return Response(
+            {"detail":result['detail']},
+            status=status.HTTP_100_CONTINUE if result['status_code']==200 else result['detail']
+        )
 
 
-class ResetPasswordConfirmAPIView(generics.GenericAPIView):
+class ResetPasswordConfirmAPIView(APIView, VerifyVerificationCodeMixin):
     permission_classes = [AllowAny]
     serializer_class = account_settings.SERIALIZERS.PASSWORD_RESET_CONFIRM
     queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
     def post(self, *args, **kwargs):
-        passwordResetProcessSerializer = self.serializer_class(data=self.request.data)
-        passwordResetProcessSerializer.is_valid(raise_exception=True)
-        try:
-            code = passwordResetProcessSerializer.data.get("code")
-            passwordResetCode = self.queryset.get(code=code)
-        except ObjectDoesNotExist:
-            return Response({"message":"code in wrong"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if passwordResetCode.code_remaining_time() is None:
-            passwordResetCode.delete()
-            return Response({"message":"code is expired"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Checking whether the request IP address or user agent data
-        # is different from the what ever stored in the database for that code
-        result = utils.compare_user_agents_data(passwordResetCode, self.request)
-        if result.get("status_code") != 200:
-            return Response({"message": result["message"]},status=result["status_code"])
-        
-        user = passwordResetCode.user
-        password = passwordResetProcessSerializer.data.get("password1")
-        if user.check_password(password):
-            return Response({"message":"The new password must not be the same as the previous password"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        user.set_password(password)
-        user.save()
-        AuthToken.objects.filter(user=user).delete()
-        passwordResetCode.delete()
-        utils.setUp_user_password_reset_complated(user)
-        return Response({"status":"password reset was successful"}, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        verificationCode = serializer.validated_data.get("verificationCode")
+        print("after serializer validation = "+str(verificationCode.code))
+        result = self.verify_verification_code(verificationCode=verificationCode)
+        if result['status_code'] == 200:
+            password = serializer.data.get("new_password1")
+            if self.user.check_password(password):
+                return Response({"detail":_("The new password must not be the same as the previous password")}, status=status.HTTP_400_BAD_REQUEST)
+            self.user.set_password(password)
+            self.user.save()
+            account_settings.MODELS.AUTH_TOKEN.objects.filter(user=self.user).delete()
+            utils.setUp_user_password_reset_complated(self.user)
+            result['detail']="password reset was successful"
+            
+        return Response({"detail":result['detail']}, status=result['status_code'])
 
 
-class UserRegisterAPIView(generics.GenericAPIView):
+class PasswordChangeAPIView(APIView, CreateTokenMixin):
+    serializer_class = account_settings.SERIALIZERS.PASSWORD_CHANGE
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={"request":request})
+        serializer.is_valid(raise_exception=True)
+        password = serializer.data.get("new_password1")
+        self.user = request.user
+        if self.user.check_password(password):
+            return Response({"detail":_("The new password must not be the same as the previous password")}, status=status.HTTP_400_BAD_REQUEST)
+        request.user.set_password(password)
+        request.user.save()
+        if account_settings.LOGOUT_ON_PASSWORD_CHANGE:
+            account_settings.MODELS.AUTH_TOKEN.objects.filter(user=request.user).delete()
+            return Response({'detail': _('New password has been saved. you need to login again')})
+        else:
+            account_settings.MODELS.AUTH_TOKEN.objects.filter(user=request.user).delete()
+            instance, token = self.create_token()
+            data = self.get_post_response_data(self.request, token, instance)
+            return Response(data, status=status.HTTP_200_OK)
+
+
+# ********** AUTH
+class UserRegisterAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = account_settings.SERIALIZERS.USER_REGISTER
     def post(self, *args, **kwargs):
-        userRegisterSerializer = self.serializer_class(data=self.request.data)
-        userRegisterSerializer.is_valid(raise_exception=True)
-        userRegisterSerializer.save()
-        return Response({"status":"Ok"}, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail":"Ok"}, status=status.HTTP_201_CREATED)
 
 
-class UserLoginAPIView(knoxViews.LoginView):
+class UserLoginAPIView(APIView, CreateTokenMixin):
     permission_classes = (AllowAny,)
     serializer_class = account_settings.SERIALIZERS.USER_LOGIN
 
+    def check_exceeding_the_token_limit(self):
+        token_limit_per_user = self.get_token_limit_per_user()
+        if token_limit_per_user is not None:
+            now = datetime.now()
+            token = self.user.auth_token_set.filter(Q(expiry__gt=now) & Q(last_use__gt=(now-token_settings.LAST_USE_TO_EXPIRY)))
+            if token.count() >= token_limit_per_user:
+                return Response(
+                    {
+                        "error": "Maximum amount of tokens allowed per user exceeded.",
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        return None
+
+    def remove_expired_token_user(self):
+        now = datetime.now()
+        self.user.auth_token_set.filter(Q(expiry__lte=now) | Q(last_use__lte=(now-token_settings.LAST_USE_TO_EXPIRY))).delete()
+
+
     def post (self, *args, **kwargs):
-        self.userLoginSerializer = self.serializer_class(data=self.request.data)
-        self.userLoginSerializer.is_valid(raise_exception=True)
-        self.user = self.userLoginSerializer.validated_data.get("user")
-        
+        serializer = self.serializer_class(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        self.user = serializer.validated_data.get("user")
+
+        self.remove_expired_token_user()
+
         re = self.check_exceeding_the_token_limit()
         if re:
             return re
-        
-        self.remove_axpired_token_user()
-
+    
         instance, token = self.create_token()
-        
         data = self.get_post_response_data(self.request, token, instance)
 
         return Response(data, status=status.HTTP_200_OK)
 
 
-class IsUserAuthenticated(generics.GenericAPIView):
+class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
-    def get(self, *args, **kwargs):
-        return Response({"yes you are!"})
+
+    def post(self, request, format=None):
+        request._auth.delete()
+        user_logged_out.send(sender=request.user.__class__,
+                             request=request, user=request.user)
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+class LogoutAllView(APIView):
+    '''
+    Log the user out of all sessions
+    I.E. deletes all auth tokens for the user
+    '''
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, format=None):
+        request.user.auth_token_set.all().delete()
+        user_logged_out.send(sender=request.user.__class__,
+                             request=request, user=request.user)
+        return Response(None, status=status.HTTP_204_NO_CONTENT)

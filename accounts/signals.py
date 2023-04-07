@@ -1,7 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from accounts.utils import setUp_user_email_confirmation
 from accounts.models import UserInformation
 
 User = get_user_model()

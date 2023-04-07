@@ -12,7 +12,7 @@ DEFAULTS = {
     'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',
     'AUTH_TOKEN_CHARACTER_LENGTH': 64,
     'TOKEN_TTL': timedelta(hours=10),
-    'LAST_USE_TO_EXPIRY': timedelta(minutes=2),
+    'LAST_USE_TO_EXPIRY': timedelta(minutes=20),
     'SERIALIZER': ObjDict(
         {
             'USER_SERIALIZER': None
@@ -32,7 +32,7 @@ IMPORT_STRINGS = {
     'TOKEN_MODEL',
 }
 
-knox_settings = APISettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS)
+token_settings = APISettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS)
 
 
 def reload_api_settings(*args, **kwargs):

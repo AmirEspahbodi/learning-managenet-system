@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.contrib.admin import StackedInline
 from .forms import UserCreationForm, UserChangeForm
-from .models import UserInformation, PasswordResetCode, EmailConfirmationCode
+from .models import UserInformation, PasswordResetCode, EmailVerificationCode
 # Register your models here.
 
 User = get_user_model()
@@ -52,6 +52,6 @@ class ResetPasswordTokenAdmin(admin.ModelAdmin):
     list_display = ('user', 'code', 'created_at', 'ip_address', 'user_agent')
 
 
-@admin.register(EmailConfirmationCode)
+@admin.register(EmailVerificationCode)
 class ResetPasswordTokenAdmin(admin.ModelAdmin):
     list_display = ('user', 'code', 'created_at', 'ip_address', 'user_agent')

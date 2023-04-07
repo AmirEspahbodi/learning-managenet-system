@@ -17,27 +17,34 @@ class ObjDict(dict):
 
         return val
 
+
 DEFAULTS = {
+    'LOGOUT_ON_PASSWORD_CHANGE': False, # False will send new token (all token will be deleted)
+    'OLD_PASSWORD_FIELD_ENABLED': True,
     'PASSWORD_MIN_LENGTH': 10,
+    'VERIFICATION_CODE_RESEND_LIMIT': 5,
     'EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES': timedelta(minutes=5),
-    'LAST_LOGIN_TO_GET_NEW_TOKEN_MINUTES': timedelta(minutes=2),
     'SERIALIZERS': ObjDict(
         {
             'EMAIL': 'accounts.api.serializers.EmailSerializer',
             'EMAIL_VERIFICATION_CODE': 'accounts.api.serializers.EmailConfirmationCodeSerializer',
             'PASSWORD_RESET_CONFIRM': 'accounts.api.serializers.PasswordResetConfirmSerializer',
-            'PASWORD_RESET_VERIFY_CODE': 'accounts.api.serializers.PasswordResetValidateCodeSerializer',
+            'PASWORD_RESET_VERIFY_CODE': 'accounts.api.serializers.PasswordResetVerifyCodeSerializer',
             'USER_REGISTER': 'accounts.api.serializers.UserRegisterSerializer',
-            'USER_LOGIN': 'accounts.api.serializers.UserLoginSerializer'
+            'USER_LOGIN': 'accounts.api.serializers.UserLoginSerializer',
+            'PASSWORD_CHANGE': 'accounts.api.serializers.PasswordChangeSerializer'
         }
     ),
     'MODELS': ObjDict(
         {
             'PASSWORD_RESET_CODE': 'accounts.models.PasswordResetCode',
-            'EMAIL_VERIFICATION_CODE': 'accounts.models.EmailConfirmationCode',
-            'VERIFICATION_STATUS': 'accounts.models.VERIFICATION_STATUS'
+            'EMAIL_VERIFICATION_CODE': 'accounts.models.EmailVerificationCode',
+            'VERIFICATION_STATUS': 'accounts.models.VERIFICATION_STATUS',
+            'AUTH_TOKEN': 'accounts.authtoken.models.AuthToken',
+            'AUTH_TOKEN_INFORMATION': 'accounts.authtoken.models.AuthTokenInformation'
         }
     )
 }
+
 
 account_settings = APISettings(defaults=DEFAULTS)

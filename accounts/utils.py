@@ -14,8 +14,9 @@ from django.contrib.sites.models import Site
 from django.conf import settings
 from templated_mail.mail import BaseEmailMessage
 # from django.core.exceptions import ObjectDoesNotExist
-from accounts.models import generate_confirmation_code
+from accounts.models import generate_verification_code
 from accounts.app_settings import account_settings
+from rest_framework.exceptions import ValidationError
 
 ############## V0: token web base (no db)
 # class AcconutActivationToken(PasswordResetTokenGenerator):
@@ -79,7 +80,7 @@ def setUp_user_password_resetV1(user):
         }
     ).send(to=[user.email])
 
-def setUp_user_email_confirmation_complated(user):
+def setUp_user_email_verification_complated(user):
     ActivationEmailComplatedEmail(
     ).send(to=[user.email])
 
@@ -152,22 +153,21 @@ def compare_user_agents_data(codeInstance, request):
 
     return {"massaga":"OK", "status_code":200}
 
-
-def setUp_user_email_password_confirmation(ConfirmationCode, Email, user, request):
+def generate_new_verification_code(VerificationCode, user, request=None):
     """
     get request ip addr and user_agent data and generate a 6 digit code.
     store code and these information in datebase and send code to user via email addres.
     return proccess result.
     """
     client_ip, is_routable, user_agent_data = get_ip_and_user_agent(request) if request else (None, None, None)
-    code = generate_confirmation_code(ConfirmationCode)
+    code = generate_verification_code(VerificationCode)
     if code==0:
         """
         If the function fails to generate a six-digit code, it means that most of the digits in the range are reserved
         try to remove expire codes and return one of the deleted code
         """
         from accounts.models import delete_expired_codes
-        code = delete_expired_codes(ConfirmationCode)
+        code = delete_expired_codes(VerificationCode)
         """
         if there is no expired code we must tell user try again later!
         """
@@ -177,32 +177,79 @@ def setUp_user_email_password_confirmation(ConfirmationCode, Email, user, reques
                 "status_code": 409
             }
 
-    confirmationCode = ConfirmationCode(
+    verificationCode = VerificationCode(
         user=user,
         code=code,
         ip_address= client_ip if client_ip else is_routable if is_routable else "private",
         user_agent= user_agent_data if user_agent_data else '{}'
     )
-    confirmationCode.save()
+    verificationCode.save()
+    return verificationCode
+    
+def check_existing_user_verifivation_codes(VerificationCode, user):
+    verificationCode = VerificationCode.objects.filter(user=user).order_by('-created_at')
+    if verificationCode.count() > 0:
+        currentVerificationCode = None
+        for code in verificationCode:
+            if not currentVerificationCode:
+                currentVerificationCode = code
+            else:
+                code.delete()
+        remain_time = currentVerificationCode.code_remaining_time()
+        if remain_time:
+            if currentVerificationCode.resended < account_settings.VERIFICATION_CODE_RESEND_LIMIT:
+                currentVerificationCode.resended = currentVerificationCode.resended + 1
+                currentVerificationCode.save()
+                return currentVerificationCode
+            else:
+                return (
+                    {"detail": f"try in f{int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)} later"}, 
+                    409
+                )
+        else:
+            currentVerificationCode.delete()
+            return None
+
+
+def setUp_user_verification_code(VerificationCode, Email, user, request):
+    """
+    check if there is a existing verifivation code
+        if it's not expired
+            if it not reached resend number, resend it
+            else tell user wait to get new code
+        elSe its expired delete it
+    else there is not code, generate code and send it
+    """
+    result = check_existing_user_verifivation_codes(VerificationCode, user)
+    print("---------------------------------------------"+str(result))
+    if isinstance(result, tuple):
+        return result
+    if result is None:
+        result = generate_new_verification_code(VerificationCode, user, request)
+    
     Email(
         context={
             'user':user,
-            'code': confirmationCode.code
+            'code': result.code
         }
     ).send(to=[user.email])
-    return {
-        "message":"The code has been sent to your email address",
-        "status_code": 200
-    }
+    remain_time = result.code_remaining_time()
+    print(remain_time)
+    return ({
+            "detail":"The code has been sent to your email address",
+            "time": f'{int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)}',
+        },
+        200
+    )
 
 
-def setUp_user_email_confirmation(user, request=None):
-    return setUp_user_email_password_confirmation(
+def setUp_user_email_verification_code(user, request=None):
+    return setUp_user_verification_code(
         account_settings.MODELS.EMAIL_VERIFICATION_CODE,
         ActivationEmail, user, request)
 
 
-def setUp_user_password_reset(user, request=None):
-    return setUp_user_email_password_confirmation(
+def setUp_user_password_reset_verification_code(user, request=None):
+    return setUp_user_verification_code(
         account_settings.MODELS.PASSWORD_RESET_CODE,
         PasswordResetEmail, user, request)

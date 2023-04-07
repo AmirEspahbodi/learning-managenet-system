@@ -5,9 +5,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from accounts.authtoken import crypto
-from accounts.authtoken.settings import CONSTANTS, knox_settings
+from accounts.authtoken.app_settings import CONSTANTS, token_settings
 
-sha = knox_settings.SECURE_HASH_ALGORITHM
+sha = token_settings.SECURE_HASH_ALGORITHM
 
 User = settings.AUTH_USER_MODEL
 
@@ -16,7 +16,7 @@ class AuthTokenManager(models.Manager):
     def create(
         self,
         user,
-        prefix=knox_settings.TOKEN_PREFIX
+        prefix=token_settings.TOKEN_PREFIX
     ):
         token = prefix + crypto.create_token_string()
         digest = crypto.hash_token(token)
@@ -28,7 +28,7 @@ class AuthTokenManager(models.Manager):
         return instance, token
 
 def expiry_set():
-    return datetime.now() + knox_settings.TOKEN_TTL
+    return datetime.now() + token_settings.TOKEN_TTL
 
 class AuthToken(models.Model):
 

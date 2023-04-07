@@ -4,14 +4,14 @@ from os import urandom as generate_bytes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 
-from knox.settings import knox_settings
+from accounts.authtoken.app_settings import token_settings
 
-sha = knox_settings.SECURE_HASH_ALGORITHM
+sha = token_settings.SECURE_HASH_ALGORITHM
 
 
 def create_token_string():
     return binascii.hexlify(
-        generate_bytes(int(knox_settings.AUTH_TOKEN_CHARACTER_LENGTH / 2))
+        generate_bytes(int(token_settings.AUTH_TOKEN_CHARACTER_LENGTH / 2))
     ).decode()
 
 
