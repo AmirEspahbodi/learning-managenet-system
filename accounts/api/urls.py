@@ -1,10 +1,12 @@
 from django.urls import path
 from accounts.api import views
 urlpatterns = [
+    path('token_status/', views.CheckAuthTokenExpiry.as_view(), name="token_status"),
     path('register/', views.UserRegisterAPIView.as_view(), name="user_register"),
     path('login/', views.UserLoginAPIView.as_view(), name="user_login"),
     path('logout/', views.LogoutView.as_view(), name='user_logout'),
     path('logout_all/', views.LogoutAllView.as_view(), name='user_logoutall'),
+    path('token/verify/', views.VerifyToken.as_view(), name="varify_token"),
     path('email/verification/get_code/', views.EmailVerificationCodeRequestAPIView.as_view(), name="email_verification_request_code"),
     path('email/verification/confirm/', views.EmailVerificationConfirmAPIView.as_view(), name="email_verification_confirm"),
     path('password/reset/get_code/', views.PasswordResetCodeRequestAPIView.as_view(), name="password_reset_request_code"),

@@ -1,51 +1,41 @@
 from datetime import timedelta
 
-from django.conf import settings
-from django.test.signals import setting_changed
 from rest_framework.settings import APISettings, api_settings
 from accounts.app_settings import ObjDict
 
-
-USER_SETTINGS = getattr(settings, 'REST_KNOX', None)
 
 DEFAULTS = {
     'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',
     'AUTH_TOKEN_CHARACTER_LENGTH': 64,
     'TOKEN_TTL': timedelta(hours=10),
     'LAST_USE_TO_EXPIRY': timedelta(minutes=20),
-    'SERIALIZER': ObjDict(
-        {
-            'USER_SERIALIZER': None
-        }
-    ),
     'TOKEN_LIMIT_PER_USER': 10,
     'AUTO_REFRESH': False,
     'MIN_REFRESH_INTERVAL': 60,
     'AUTH_HEADER_PREFIX': 'Token',
     'EXPIRY_DATETIME_FORMAT': api_settings.DATETIME_FORMAT,
-    'TOKEN_MODEL': 'accounts.authtoken.AuthToken',
     'TOKEN_PREFIX': '',
+    'SERIALIZERS':  ObjDict(
+        {
+            'AUTH_TOKEN': 'accounts.authtoken.serializers.TokenSerialier',
+        }
+    ),
+    'MODELS': ObjDict(
+        {
+            'AUTH_TOKEN': 'accounts.authtoken.models.AuthToken',
+            'AUTH_TOKEN_INFORMATION': 'accounts.authtoken.models.AuthTokenInformation'
+        }
+    ),
 }
 
 IMPORT_STRINGS = {
     'SECURE_HASH_ALGORITHM',
-    'TOKEN_MODEL',
+    'AUTH_TOKEN_MODEL',
+    'AUTH_TOKEN_INFORMATION_MODEL',
+    'AUTH_TOKEN_SEIALIZER',
 }
 
-token_settings = APISettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS)
-
-
-def reload_api_settings(*args, **kwargs):
-    global knox_settings
-    setting, value = kwargs['setting'], kwargs['value']
-    if setting == 'REST_KNOX':
-        knox_settings = APISettings(value, DEFAULTS, IMPORT_STRINGS)
-        if len(knox_settings.TOKEN_PREFIX) > CONSTANTS.MAXIMUM_TOKEN_PREFIX_LENGTH:
-            raise ValueError("Illegal TOKEN_PREFIX length")
-
-
-setting_changed.connect(reload_api_settings)
-
+token_settings = APISettings(defaults=DEFAULTS, import_strings=IMPORT_STRINGS)
 
 class CONSTANTS:
     '''

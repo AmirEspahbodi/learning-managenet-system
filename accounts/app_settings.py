@@ -39,9 +39,7 @@ DEFAULTS = {
         {
             'PASSWORD_RESET_CODE': 'accounts.models.PasswordResetCode',
             'EMAIL_VERIFICATION_CODE': 'accounts.models.EmailVerificationCode',
-            'VERIFICATION_STATUS': 'accounts.models.VERIFICATION_STATUS',
-            'AUTH_TOKEN': 'accounts.authtoken.models.AuthToken',
-            'AUTH_TOKEN_INFORMATION': 'accounts.authtoken.models.AuthTokenInformation'
+            'VERIFICATION_STATUS': 'accounts.models.VERIFICATION_STATUS'
         }
     )
 }

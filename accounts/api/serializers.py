@@ -1,8 +1,9 @@
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model, authenticate, password_validation
+from django.contrib.auth import get_user_model, authenticate
 from django.core.validators import validate_email
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.forms import SetPasswordForm
+from django.core.exceptions import ValidationError as djangoValidationError
 from rest_framework import exceptions, serializers
 from rest_framework.exceptions import ValidationError
 from phonenumber_field.validators import validate_international_phonenumber
@@ -41,8 +42,8 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         if not self.set_password_form.is_valid():
             raise serializers.ValidationError(self.set_password_form.errors)
         attrs['verificationCode']=resetCode
-        print(f"attrs = {attrs}")
         return attrs
+
 
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(max_length=128)
@@ -84,7 +85,6 @@ class PasswordChangeSerializer(serializers.Serializer):
         return attrs
 
 
-
 class UserRegisterSerializer(serializers.ModelSerializer):
     password1 = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
@@ -98,7 +98,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "The two password fields didn't match."
             )
-        return data    
+        # use default django password validator (user information similarity) too
+        return data
     
     def create(self, validated_data):
         user = UserModel(
@@ -139,46 +140,32 @@ class UserLoginSerializer(serializers.Serializer):
             msg = _('User account is disabled.')
             raise exceptions.ValidationError(msg)
 
-    @staticmethod
-    def validate_email_verification_status(user):
-        if (not user.is_email_verified()):
-            raise serializers.ValidationError(_('E-mail is not verified.'))
-
-    @staticmethod
-    def validate_phone_number_verification_status(user):
-        if (not user.is_phone_number_verified()):
-            raise serializers.ValidationError(_('phone number is not verified.'))
-    
-    @staticmethod
-    def validate_email_or_phone_number_verification_status(user):
-        if not (user.is_phone_number_verified() or user.is_email_verified()):
-            raise serializers.ValidationError(_('either phone number or email address must be verifiy.'))
-
     def validate(self, attrs):
         login_field = attrs.get('login_field')
         password = attrs.get('password')
         email, username, phone_number = None, None, None
-
+        print(login_field)
+        print(username, email, phone_number,)
         try:
             validate_email(login_field)
             email = login_field
-        except ValidationError:
+        except djangoValidationError:
             pass
 
         if not email:
             try:
                 UnicodeUsernameValidator()(login_field)
                 username = login_field
-            except ValidationError:
+            except djangoValidationError:
                 pass
 
         if not (email or phone_number):
             try:
                 validate_international_phonenumber(login_field)
                 phone_number = login_field
-            except ValidationError:
+            except djangoValidationError:
                 pass
-        
+        print(username, email, phone_number,)
         user = self.get_auth_user(username, email, phone_number, password)
 
         if not user:
@@ -186,15 +173,6 @@ class UserLoginSerializer(serializers.Serializer):
             raise exceptions.ValidationError(msg)
 
         self.validate_auth_user_status(user)
-
-        if email:
-            self.validate_email_verification_status(user)
-
-        if phone_number:
-            self.validate_phone_number_verification_status(user)
-
-        if username:
-            self.validate_email_or_phone_number_verification_status(user)
 
         attrs['user'] = user
         return attrs

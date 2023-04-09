@@ -129,9 +129,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def is_phone_number_verified(self):
         return self.verification_status % VERIFICATION_STATUS.PHONE == 0
     
-    def is_account_verified(self):
-        return self.is_email_verified() and self.is_phone_number_verified()
-    
     @property
     def is_staff(self):
         return self.role % Roles.ADMIN == 0

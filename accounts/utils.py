@@ -203,12 +203,13 @@ def check_existing_user_verifivation_codes(VerificationCode, user):
                 return currentVerificationCode
             else:
                 return (
-                    {"detail": f"try in f{int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)} later"}, 
+                    {"detail": f"try in {int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)} later"}, 
                     409
                 )
         else:
             currentVerificationCode.delete()
             return None
+    return None
 
 
 def setUp_user_verification_code(VerificationCode, Email, user, request):
@@ -221,7 +222,6 @@ def setUp_user_verification_code(VerificationCode, Email, user, request):
     else there is not code, generate code and send it
     """
     result = check_existing_user_verifivation_codes(VerificationCode, user)
-    print("---------------------------------------------"+str(result))
     if isinstance(result, tuple):
         return result
     if result is None:

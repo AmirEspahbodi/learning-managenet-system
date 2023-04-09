@@ -3,24 +3,25 @@ from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.signals import user_logged_in,user_logged_out
+from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.db.models import Q
 from rest_framework.serializers import DateTimeField
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, exceptions
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
 
 from accounts.app_settings import account_settings
 from accounts.authtoken.app_settings import token_settings
+from accounts.authtoken.auth import TokenAuthentication
 from accounts import utils
 
 UserModel = get_user_model()
 
 
 class VerifyVerificationCodeMixin:
-    def verify_verification_code(self, code=None, verificationCode=None, delete_code=True):
+    def verify_verification_code(self, code=None, verificationCode=None, delete_code=False):
         print
         if not verificationCode:
             try:
@@ -42,6 +43,7 @@ class VerifyVerificationCodeMixin:
         self.user = verificationCode.user
         if delete_code:
             verificationCode.delete()
+            return {'detail': 'code is ok', 'status_code':200}
         return {'detail': 'code is ok', 'status_code':200}
 
 
@@ -58,9 +60,6 @@ class CreateTokenMixin:
     def get_token_limit_per_user(self):
         return token_settings.TOKEN_LIMIT_PER_USER
 
-    def get_user_serializer_class(self):
-        return token_settings.USER_SERIALIZER
-
     def get_expiry_datetime_format(self):
         return token_settings.EXPIRY_DATETIME_FORMAT
 
@@ -69,12 +68,12 @@ class CreateTokenMixin:
         return DateTimeField(format=datetime_format).to_representation(expiry)
 
     def create_token(self):
-        instance, token = account_settings.MODELS.AUTH_TOKEN.objects.create(
+        instance, token = token_settings.MODELS.AUTH_TOKEN.objects.create(
             user=self.user,
             prefix=self.get_token_prefix()
         )
         (client_ip, is_routable, user_agent_data) = utils.get_ip_and_user_agent(self.request)
-        account_settings.MODELS.AUTH_TOKEN_INFORMATION.objects.create(
+        token_settings.MODELS.AUTH_TOKEN_INFORMATION.objects.create(
             authToken = instance,
             ip_address = client_ip if client_ip else is_routable,
             user_agent = user_agent_data,
@@ -123,7 +122,7 @@ class EmailVerificationConfirmAPIView(GenericAPIView, VerifyVerificationCodeMixi
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         code = serializer.data.get("code")
-        result = self.verify_verification_code(code)
+        result = self.verify_verification_code(code, delete_code=True)
         if result['status_code'] == 200:
             if self.user.is_email_verified():
                 return Response({"detail":_("Your email was confirmed")}, status=status.HTTP_400_BAD_REQUEST)
@@ -131,7 +130,7 @@ class EmailVerificationConfirmAPIView(GenericAPIView, VerifyVerificationCodeMixi
             self.user.save()
             utils.setUp_user_email_verification_complated(self.user)
             return Response({"detail":_("Email has been successfully verified")}, status=status.HTTP_200_OK)
-        return Response(result["detail"], status=result['status_code'])
+        return Response({"detail":result["detail"]}, status=result['status_code'])
 
 
 # ********** PASSWORD REST
@@ -167,10 +166,10 @@ class ResetPasswordVerifyCodeAPIView(GenericAPIView, VerifyVerificationCodeMixin
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         code = serializer.data.get("code")
-        result = self.verify_verification_code(code=code, delete_code=False)
+        result = self.verify_verification_code(code=code)
         return Response(
             {"detail":result['detail']},
-            status=status.HTTP_100_CONTINUE if result['status_code']==200 else result['detail']
+            status=status.HTTP_100_CONTINUE if result['status_code']==200 else result['status_code']
         )
 
 
@@ -183,21 +182,24 @@ class ResetPasswordConfirmAPIView(APIView, VerifyVerificationCodeMixin):
         serializer.is_valid(raise_exception=True)
         verificationCode = serializer.validated_data.get("verificationCode")
         print("after serializer validation = "+str(verificationCode.code))
-        result = self.verify_verification_code(verificationCode=verificationCode)
+        result,verificationCode = self.verify_verification_code(verificationCode=verificationCode)
         if result['status_code'] == 200:
             password = serializer.data.get("new_password1")
             if self.user.check_password(password):
                 return Response({"detail":_("The new password must not be the same as the previous password")}, status=status.HTTP_400_BAD_REQUEST)
             self.user.set_password(password)
             self.user.save()
-            account_settings.MODELS.AUTH_TOKEN.objects.filter(user=self.user).delete()
+            verificationCode.delete()
+            token_settings.MODELS.AUTH_TOKEN.objects.filter(user=self.user).delete()
             utils.setUp_user_password_reset_complated(self.user)
             result['detail']="password reset was successful"
-            
         return Response({"detail":result['detail']}, status=result['status_code'])
 
 
 class PasswordChangeAPIView(APIView, CreateTokenMixin):
+    '''
+    if it complite successfully, it will return new token and expire information
+    '''
     serializer_class = account_settings.SERIALIZERS.PASSWORD_CHANGE
     permission_classes = (IsAuthenticated,)
 
@@ -211,10 +213,10 @@ class PasswordChangeAPIView(APIView, CreateTokenMixin):
         request.user.set_password(password)
         request.user.save()
         if account_settings.LOGOUT_ON_PASSWORD_CHANGE:
-            account_settings.MODELS.AUTH_TOKEN.objects.filter(user=request.user).delete()
+            token_settings.MODELS.AUTH_TOKEN.objects.filter(user=request.user).delete()
             return Response({'detail': _('New password has been saved. you need to login again')})
         else:
-            account_settings.MODELS.AUTH_TOKEN.objects.filter(user=request.user).delete()
+            token_settings.MODELS.AUTH_TOKEN.objects.filter(user=request.user).delete()
             instance, token = self.create_token()
             data = self.get_post_response_data(self.request, token, instance)
             return Response(data, status=status.HTTP_200_OK)
@@ -293,3 +295,36 @@ class LogoutAllView(APIView):
         user_logged_out.send(sender=request.user.__class__,
                              request=request, user=request.user)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+class VerifyToken(APIView):
+    '''
+    Log the user out of all sessions
+    I.E. deletes all auth tokens for the user
+    '''
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, format=None):
+        return Response(None, status=status.HTTP_200_OK)
+
+
+class CheckAuthTokenExpiry(APIView):
+    permission_classes = (AllowAny,)
+    serializer_class = token_settings.SERIALIZERS.AUTH_TOKEN
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token = serializer.validated_data.get('token')
+        try:
+            _, authtoken = TokenAuthentication().authenticate_credentials(token)
+        except exceptions.AuthenticationFailed as e:
+            return Response({'details':e.detail}, status=status.HTTP_401_UNAUTHORIZED)
+        remain_time = authtoken.expiry - datetime.now()
+        ttu = token_settings.LAST_USE_TO_EXPIRY
+        return Response(
+            {
+                'expiry': f'{int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)}',
+                'time_to_use': f'{int(ttu.seconds/3600)}:{int((ttu.seconds/60) % 60)}:{int(ttu.seconds % 60)}'
+            },
+            status=status.HTTP_200_OK
+        )

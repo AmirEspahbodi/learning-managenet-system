@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     'phonenumber_field',
     
     'accounts',
-    'accounts.authtoken'
+    'accounts.authtoken',
+    'api',
 ]
 
 MIDDLEWARE = [

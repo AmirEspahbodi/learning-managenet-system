@@ -53,7 +53,7 @@ class TokenAuthentication(BaseAuthentication):
         user, auth_token = self.authenticate_credentials(auth[1])
         return (user, auth_token)
 
-    def authenticate_credentials(self, token):
+    def authenticate_credentials(self, token, update_last_use=True):
         '''
         Due to the random nature of hashing a value, this must inspect
         each auth_token individually to find the correct one.
@@ -61,10 +61,11 @@ class TokenAuthentication(BaseAuthentication):
         Tokens that have expired will be deleted and skipped
         '''
         msg = _('Invalid token.')
-        token = token.decode("utf-8")
+        if not isinstance(token, str):
+            token = token.decode("utf-8")
         for auth_token in AuthToken.objects.filter(
                 token_key=token[:CONSTANTS.TOKEN_KEY_LENGTH]):
-            if self.token_not_ok(auth_token):
+            if self.token_not_ok(auth_token, update_last_use):
                 continue
 
             try:
@@ -96,13 +97,14 @@ class TokenAuthentication(BaseAuthentication):
     def authenticate_header(self, request):
         return token_settings.AUTH_HEADER_PREFIX
 
-    def token_not_ok(self, auth_token):
+    def token_not_ok(self, auth_token, update_last_use=True):
         if auth_token.expiry < datetime.now() or (auth_token.last_use + token_settings.LAST_USE_TO_EXPIRY) < datetime.now():
             username = auth_token.user.get_username()
             auth_token.delete()
             token_expired.send(sender=self.__class__,
                                 username=username, source="auth_token")
             return True
-        # update time to expire
-        auth_token.save()
+        # update time to expire (last_use attr)
+        if update_last_use:
+            auth_token.save()
         return False
