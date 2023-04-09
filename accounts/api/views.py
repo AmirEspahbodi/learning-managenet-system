@@ -82,10 +82,12 @@ class CreateTokenMixin:
                     request=self.request, user=self.user)
         return instance, token
 
-    def get_post_response_data(self, request, token, instance):
+    def get_post_response_data(self):
+        instance, token = self.create_token()
         return {
             'expiry': self.format_expiry_datetime(instance.expiry),
-            'not_use_expire_minuts': int(token_settings.LAST_USE_TO_EXPIRY.seconds/60),
+            'last_use_to_expire': {
+                'seconds': token_settings.LAST_USE_TO_EXPIRY.seconds, 'days': token_settings.LAST_USE_TO_EXPIRY.days},
             'token_key': token
         }
 
@@ -217,8 +219,7 @@ class PasswordChangeAPIView(APIView, CreateTokenMixin):
             return Response({'detail': _('New password has been saved. you need to login again')})
         else:
             token_settings.MODELS.AUTH_TOKEN.objects.filter(user=request.user).delete()
-            instance, token = self.create_token()
-            data = self.get_post_response_data(self.request, token, instance)
+            data = self.get_post_response_data()
             return Response(data, status=status.HTTP_200_OK)
 
 
@@ -244,9 +245,7 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
             token = self.user.auth_token_set.filter(Q(expiry__gt=now) & Q(last_use__gt=(now-token_settings.LAST_USE_TO_EXPIRY)))
             if token.count() >= token_limit_per_user:
                 return Response(
-                    {
-                        "error": "Maximum amount of tokens allowed per user exceeded.",
-                    },
+                    {"error": "Maximum amount of tokens allowed per user exceeded."},
                     status=status.HTTP_403_FORBIDDEN
                 )
         return None
@@ -267,8 +266,7 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
         if re:
             return re
     
-        instance, token = self.create_token()
-        data = self.get_post_response_data(self.request, token, instance)
+        data = self.get_post_response_data()
 
         return Response(data, status=status.HTTP_200_OK)
 
@@ -323,8 +321,10 @@ class CheckAuthTokenExpiry(APIView):
         ttu = token_settings.LAST_USE_TO_EXPIRY
         return Response(
             {
-                'expiry': f'{int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)}',
-                'time_to_use': f'{int(ttu.seconds/3600)}:{int((ttu.seconds/60) % 60)}:{int(ttu.seconds % 60)}'
+            'expiry': self.format_expiry_datetime(authtoken.expiry),
+            'last_use_to_expire': {
+                'seconds': token_settings.LAST_USE_TO_EXPIRY.seconds, 'days': token_settings.LAST_USE_TO_EXPIRY.days},
+            'token_key': token
             },
             status=status.HTTP_200_OK
         )

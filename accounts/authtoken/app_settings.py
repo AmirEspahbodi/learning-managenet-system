@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from rest_framework.settings import APISettings, api_settings
 from accounts.app_settings import ObjDict
@@ -8,7 +8,7 @@ DEFAULTS = {
     'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',
     'AUTH_TOKEN_CHARACTER_LENGTH': 64,
     'TOKEN_TTL': timedelta(hours=10),
-    'LAST_USE_TO_EXPIRY': timedelta(minutes=20),
+    'LAST_USE_TO_EXPIRY': timedelta(hours=1),
     'TOKEN_LIMIT_PER_USER': 10,
     'AUTO_REFRESH': False,
     'MIN_REFRESH_INTERVAL': 60,
