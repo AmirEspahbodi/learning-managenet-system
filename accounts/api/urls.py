@@ -1,7 +1,7 @@
 from django.urls import path
 from accounts.api import views
 urlpatterns = [
-    path('token_status/', views.CheckAuthTokenExpiry.as_view(), name="token_status"),
+    path('token_verify/', views.AuthTokenVarifyApiView.as_view(), name="token_status"),
     path('register/', views.UserRegisterAPIView.as_view(), name="user_register"),
     path('login/', views.UserLoginAPIView.as_view(), name="user_login"),
     path('logout/', views.LogoutView.as_view(), name='user_logout'),

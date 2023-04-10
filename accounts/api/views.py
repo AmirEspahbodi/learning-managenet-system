@@ -88,7 +88,7 @@ class CreateTokenMixin:
             'expiry': self.format_expiry_datetime(instance.expiry),
             'last_use_to_expire': {
                 'seconds': token_settings.LAST_USE_TO_EXPIRY.seconds, 'days': token_settings.LAST_USE_TO_EXPIRY.days},
-            'token_key': token
+            'token': token
         }
 
 
@@ -306,7 +306,15 @@ class VerifyToken(APIView):
         return Response(None, status=status.HTTP_200_OK)
 
 
-class CheckAuthTokenExpiry(APIView):
+class AuthTokenVarifyApiView(APIView):
+
+    def get_expiry_datetime_format(self):
+        return token_settings.EXPIRY_DATETIME_FORMAT
+
+    def format_expiry_datetime(self, expiry):
+        datetime_format = self.get_expiry_datetime_format()
+        return DateTimeField(format=datetime_format).to_representation(expiry)
+    
     permission_classes = (AllowAny,)
     serializer_class = token_settings.SERIALIZERS.AUTH_TOKEN
     def post(self, request, *args, **kwargs):
@@ -324,7 +332,7 @@ class CheckAuthTokenExpiry(APIView):
             'expiry': self.format_expiry_datetime(authtoken.expiry),
             'last_use_to_expire': {
                 'seconds': token_settings.LAST_USE_TO_EXPIRY.seconds, 'days': token_settings.LAST_USE_TO_EXPIRY.days},
-            'token_key': token
+            'token': token
             },
             status=status.HTTP_200_OK
         )

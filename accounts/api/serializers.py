@@ -144,8 +144,6 @@ class UserLoginSerializer(serializers.Serializer):
         login_field = attrs.get('login_field')
         password = attrs.get('password')
         email, username, phone_number = None, None, None
-        print(login_field)
-        print(username, email, phone_number,)
         try:
             validate_email(login_field)
             email = login_field
@@ -165,7 +163,6 @@ class UserLoginSerializer(serializers.Serializer):
                 phone_number = login_field
             except djangoValidationError:
                 pass
-        print(username, email, phone_number,)
         user = self.get_auth_user(username, email, phone_number, password)
 
         if not user:

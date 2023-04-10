@@ -9,7 +9,7 @@ from accounts.app_settings import account_settings
 
 @deconstructible
 class UnicodeUsernameValidator(validators.RegexValidator):
-    regex = r"^[\w]+\Z"
+    regex = r"^[a-zA-Z][\w]+\Z"
     message = _(
         "Enter a valid username. This value may contain only letters, "
         "numbers, and _ characters."
