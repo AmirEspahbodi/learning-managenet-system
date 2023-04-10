@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError as djangoValidationError
 from rest_framework import exceptions, serializers
 from rest_framework.exceptions import ValidationError
 from phonenumber_field.validators import validate_international_phonenumber
-from accounts.validators import validate_password, validate_6_digit_code, UnicodeUsernameValidator
+from accounts.validators import validate_password, validate_6_digit_code, UnicodeUsernameValidator, name_validator
 from accounts.app_settings import account_settings
 
 UserModel = get_user_model()
@@ -96,9 +96,19 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def validate(self, data, *args, **kwargs):
         if data['password1'] != data['password2']:
             raise serializers.ValidationError(
-                "The two password fields didn't match."
+                {'password': "The two password fields didn't match."}
             )
+        
         # use default django password validator (user information similarity) too
+        first_name_error = name_validator(data['first_name'], return_error=True)
+        last_name_error = name_validator(data['last_name'], return_error=True)
+        name_errors = {}
+        name_errors.update({'first_name':first_name_error} if first_name_error else {})
+        name_errors.update({'last_name':last_name_error} if last_name_error else {})
+        if name_errors:
+            raise serializers.ValidationError(
+                name_errors
+            )
         return data
     
     def create(self, validated_data):

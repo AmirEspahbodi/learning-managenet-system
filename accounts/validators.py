@@ -4,8 +4,8 @@ from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from accounts.app_settings import account_settings
-
-
+from rest_framework.exceptions import ValidationError
+from rest_framework.serializers import as_serializer_error
 
 @deconstructible
 class UnicodeUsernameValidator(validators.RegexValidator):
@@ -59,10 +59,11 @@ def PostalCodeValidator(value):
         raise ValueError('کد ملی معتبر نیست')
 
 
+# used in serrializers
 def validate_password(password):
     password
     if len(password) < account_settings.PASSWORD_MIN_LENGTH:
-        return[ "Password must be a minimum of {0} characters.".format(account_settings.PASSWORD_MIN_LENGTH)]
+        raise ValueError([ "Password must be a minimum of {0} characters.".format(account_settings.PASSWORD_MIN_LENGTH)])
     has_upper = False
     has_lower = False
     has_number = False
@@ -85,9 +86,18 @@ def validate_password(password):
         password_errors.append("Password must contain numbers")
     if not has_other:
         password_errors.append("Password must contain at least one other character")
-    return password_errors
+    if password_errors:
+        raise ValidationError(password_errors)
+
 
 def validate_6_digit_code(value):
     int_value = int(value)
     if not (int_value < 999999 and int_value > 100000):
-        raise ValueError("code must be in range 100000-999999")
+        raise ValidationError("code must be in range 100000-999999")
+
+def name_validator(value, return_error=False):
+    if not re.match('^[a-zA-Z ]+$', value):
+        if return_error:
+            return "valid name must only contains latters"
+        else:
+            raise ValidationError("valid name contains only latters")
