@@ -144,14 +144,14 @@ def compare_user_agents_data(codeInstance, request):
     storred_client_ip , storred_user_agent_data = (codeInstance.ip_address, json.loads(codeInstance.user_agent.replace("\'", "\"")))
 
     if not (storred_client_ip == current_client_ip or storred_client_ip==current_is_routable):
-        return {"message":"do not change your ip address during process", "status_code":403}
+        return {"detail":"do not change your ip address during process", "status_code":403}
     
     if  current_user_agent_data["get_browser"] != storred_user_agent_data["get_browser"] or \
         current_user_agent_data["get_device"] != storred_user_agent_data["get_device"] or \
         current_user_agent_data["get_os"] != storred_user_agent_data["get_os"] :
-        return {"message":"do not change your browser during process", "status_code":403}
+        return {"detail":"do not change your browser during process", "status_code":403}
 
-    return {"massaga":"OK", "status_code":200}
+    return {"detail":"OK", "status_code":200}
 
 def generate_new_verification_code(VerificationCode, user, request=None):
     """
@@ -173,7 +173,7 @@ def generate_new_verification_code(VerificationCode, user, request=None):
         """
         if code==0:
             return {
-                "message": "Try in a few minutes",
+                "detail": "Try in a few minutes",
                 "status_code": 409
             }
 

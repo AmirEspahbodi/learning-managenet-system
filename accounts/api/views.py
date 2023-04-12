@@ -198,6 +198,7 @@ class ResetPasswordConfirmAPIView(APIView, VerifyVerificationCodeMixin):
         return Response({"detail":result['detail']}, status=result['status_code'])
 
 
+# ********** PASSWORD CHANGE
 class PasswordChangeAPIView(APIView, CreateTokenMixin):
     '''
     if it complite successfully, it will return new token and expire information
@@ -245,7 +246,7 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
             token = self.user.auth_token_set.filter(Q(expiry__gt=now) & Q(last_use__gt=(now-token_settings.LAST_USE_TO_EXPIRY)))
             if token.count() >= token_limit_per_user:
                 return Response(
-                    {"error": "Maximum amount of tokens allowed per user exceeded."},
+                    {"non_field_errors": ["Maximum amount of tokens allowed per user exceeded."]},
                     status=status.HTTP_403_FORBIDDEN
                 )
         return None

@@ -63,7 +63,7 @@ def PostalCodeValidator(value):
 def validate_password(password):
     password
     if len(password) < account_settings.PASSWORD_MIN_LENGTH:
-        raise ValueError([ "Password must be a minimum of {0} characters.".format(account_settings.PASSWORD_MIN_LENGTH)])
+        raise ValidationError([ "Password must be a minimum of {0} characters.".format(account_settings.PASSWORD_MIN_LENGTH)])
     has_upper = False
     has_lower = False
     has_number = False
