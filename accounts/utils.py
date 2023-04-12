@@ -203,8 +203,15 @@ def check_existing_user_verifivation_codes(VerificationCode, user):
                 return currentVerificationCode
             else:
                 return (
-                    {"detail": f"try in {int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)} later"}, 
-                    409
+                    {
+                        "detail": "wait for blow time and request again!",
+                        "time": {
+                            'hours': int(remain_time.seconds/3600),
+                            'minutes': int((remain_time.seconds/60) % 60),
+                            'seconds': int(remain_time.seconds % 60)
+                        },
+                     },
+                    429, # HTTP_429_TOO_MANY_REQUESTS
                 )
         else:
             currentVerificationCode.delete()
@@ -237,7 +244,11 @@ def setUp_user_verification_code(VerificationCode, Email, user, request):
     print(remain_time)
     return ({
             "detail":"The code has been sent to your email address",
-            "time": f'{int(remain_time.seconds/3600)}:{int((remain_time.seconds/60) % 60)}:{int(remain_time.seconds % 60)}',
+            "time": {
+                'hours': int(remain_time.seconds/3600),
+                'minutes': int((remain_time.seconds/60) % 60),
+                'seconds': int(remain_time.seconds % 60)
+            },
         },
         200
     )
