@@ -32,7 +32,8 @@ DEFAULTS = {
             'PASWORD_RESET_VERIFY_CODE': 'accounts.api.serializers.PasswordResetVerifyCodeSerializer',
             'USER_REGISTER': 'accounts.api.serializers.UserRegisterSerializer',
             'USER_LOGIN': 'accounts.api.serializers.UserLoginSerializer',
-            'PASSWORD_CHANGE': 'accounts.api.serializers.PasswordChangeSerializer'
+            'PASSWORD_CHANGE': 'accounts.api.serializers.PasswordChangeSerializer',
+            'Mobile_Global_Settings':'accounts.api.serializers.MobileGlobalSettingsSerializer'
         }
     ),
     'MODELS': ObjDict(

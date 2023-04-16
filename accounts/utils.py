@@ -173,7 +173,7 @@ def generate_new_verification_code(VerificationCode, user, request=None):
         """
         if code==0:
             return {
-                "detail": "Try in a few minutes",
+                "detail": "most of the codes are reserved! Try in a few minutes later",
                 "status_code": 409
             }
 
@@ -204,7 +204,7 @@ def check_existing_user_verifivation_codes(VerificationCode, user):
             else:
                 return (
                     {
-                        "detail": "wait for blow time and request again!",
+                        "detail": "too much requests! wait",
                         "time": {
                             'hours': int(remain_time.seconds/3600),
                             'minutes': int((remain_time.seconds/60) % 60),

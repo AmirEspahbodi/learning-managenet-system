@@ -22,7 +22,6 @@ UserModel = get_user_model()
 
 class VerifyVerificationCodeMixin:
     def verify_verification_code(self, code=None, verificationCode=None, delete_code=False):
-        print
         if not verificationCode:
             try:
                 verificationCode = self.queryset.get(code=code)
@@ -39,7 +38,7 @@ class VerifyVerificationCodeMixin:
         # is different from the what ever stored in the database for that code
         result = utils.compare_user_agents_data(verificationCode, self.request)
         if result.get("status_code") != 200:
-            return {"detail": result["message"], "status_code":result["status_code"]}
+            return {"detail": result["detail"], "status_code":result["status_code"]}
         self.user = verificationCode.user
         if delete_code:
             verificationCode.delete()
@@ -171,7 +170,7 @@ class ResetPasswordVerifyCodeAPIView(GenericAPIView, VerifyVerificationCodeMixin
         result = self.verify_verification_code(code=code)
         return Response(
             {"detail":result['detail']},
-            status=status.HTTP_100_CONTINUE if result['status_code']==200 else result['status_code']
+            status=result['status_code']
         )
 
 
@@ -184,11 +183,15 @@ class ResetPasswordConfirmAPIView(APIView, VerifyVerificationCodeMixin):
         serializer.is_valid(raise_exception=True)
         verificationCode = serializer.validated_data.get("verificationCode")
         print("after serializer validation = "+str(verificationCode.code))
-        result,verificationCode = self.verify_verification_code(verificationCode=verificationCode)
+        result = self.verify_verification_code(verificationCode=verificationCode)
         if result['status_code'] == 200:
             password = serializer.data.get("new_password1")
             if self.user.check_password(password):
-                return Response({"detail":_("The new password must not be the same as the previous password")}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {
+                        "detail":_("The new password must not be the same as the previous password")},
+                        status=status.HTTP_409_CONFLICT
+                )
             self.user.set_password(password)
             self.user.save()
             verificationCode.delete()
@@ -337,3 +340,17 @@ class AuthTokenVarifyApiView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
+# ********** GetGlobal Settings
+class GetMobileGlobalSettingsApiView(APIView):
+    serializer_class = account_settings.SERIALIZERS.Mobile_Global_Settings
+    def get(self, request, *args, **kwargs):
+        serializer = self.serializer_class({
+            "logout_on_exit": True,
+            "auth_token_last_use_to_expire": {
+                'days': token_settings.LAST_USE_TO_EXPIRY.days,
+                'seconds': token_settings.LAST_USE_TO_EXPIRY.seconds
+            }
+        })
+        return Response()

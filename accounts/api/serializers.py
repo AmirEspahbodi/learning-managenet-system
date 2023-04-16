@@ -183,3 +183,9 @@ class UserLoginSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+
+class MobileGlobalSettingsSerializer(serializers.Serializer):
+    logout_on_exit = serializers.BooleanField()
+    auth_token_last_use_to_expire = serializers.DateTimeField()
+    
