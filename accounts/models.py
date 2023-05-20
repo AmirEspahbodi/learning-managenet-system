@@ -18,10 +18,10 @@ class Roles(models.IntegerChoices):
     NOT_DEFINED = 1, 'not defined'
     STUDENT = 2, 'student'
     TEACHER = 3, 'teacher'
-    SECRETARY = 5, 'secretary'
-    SUPERVISOR = 7, 'supervisor'
-    ADMIN = 13, 'admin'
+    SUPERVISOR = 5, 'supervisor'
+    ADMIN = 7, 'admin'
     TEACHER_SUPERVISOR = TEACHER[0]*SUPERVISOR[0], 'teacher and supervisor'
+    TEACHER_ADMIN = TEACHER[0]*ADMIN[0], 'teacher and admin'
 
 
 class VERIFICATION_STATUS(models.IntegerChoices):
@@ -31,7 +31,7 @@ class VERIFICATION_STATUS(models.IntegerChoices):
     BOTH = 6, _("Both of them are verified.")
 
    
-class UserManager(UserManager):
+class MyUserManager(UserManager):
     def create_user(self, username, email=None, password=None, **extra_fields):
         if extra_fields.get('role') % Roles.ADMIN[0] == 0:
             raise ValueError("You are not allowed.")
@@ -99,7 +99,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=VERIFICATION_STATUS.NONE
     )
 
-    objects = UserManager()
+    objects = MyUserManager()
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "username"
@@ -238,11 +238,11 @@ class VerificationCodeMixin(models.Model):
 
 class EmailVerificationCode(VerificationCodeMixin):
     def __str__(self):
-        return str(self.user)+" | "+str(self.code)
+        return f"{self.user} | {self.code}"
 
 class PasswordResetCode(VerificationCodeMixin):
     def __str__(self):
-        return str(self.user)+" | "+str(self.code)
+        return f"{self.user} | {self.code}"
 
 
 def generate_verification_code(cls):

@@ -6,3 +6,6 @@ djangorestframework
 django-ipware
 ua-parser
 user-agents
+django_jalali[drf]
+django_jalali
+django-jalali-date 

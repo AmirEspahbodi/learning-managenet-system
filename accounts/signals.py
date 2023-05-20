@@ -6,6 +6,6 @@ from accounts.models import UserInformation
 User = get_user_model()
 
 @receiver(post_save, sender=User)
-def send_email_verification(sender, instance, created, **kwargs):
+def craete_user_information(sender, instance, created, **kwargs):
     if created:
         UserInformation.objects.create(user=instance)

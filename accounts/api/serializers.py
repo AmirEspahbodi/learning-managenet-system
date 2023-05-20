@@ -139,7 +139,7 @@ class UserLoginSerializer(serializers.Serializer):
 
     def get_auth_user(self, username, email, phone_number, password):
         if not ((username or email or phone_number) and password):
-            msg = _('not valid login information.')
+            msg = {'login_field':'not valid login information.'}
             raise exceptions.ValidationError(msg)
         user = authenticate(self.context.get('request'), username=username, email=email, phone_number=phone_number, password=password)
         return user
@@ -147,7 +147,7 @@ class UserLoginSerializer(serializers.Serializer):
     @staticmethod
     def validate_auth_user_status(user):
         if not user.is_active:
-            msg = _('User account is disabled.')
+            msg = {'non_field_errors': 'User account is disabled.'}
             raise exceptions.ValidationError(msg)
 
     def validate(self, attrs):
@@ -176,7 +176,20 @@ class UserLoginSerializer(serializers.Serializer):
         user = self.get_auth_user(username, email, phone_number, password)
 
         if not user:
-            msg = _('Unable to log in with provided credentials.')
+            try:
+                if username:
+                    user = UserModel.objects.get(username=username)
+                elif email:
+                    user = UserModel.objects.get(email=email)
+                elif phone_number:
+                    user = UserModel.objects.get(phone_number=phone_number)
+            except UserModel.DoesNotExist:
+                pass
+
+            msg = {'non_field_errors':  'Unable to log in with provided credentials.' 
+                                        if user else 
+                                        'no user found with with provided credentials'
+                                        }
             raise exceptions.ValidationError(msg)
 
         self.validate_auth_user_status(user)
@@ -187,5 +200,5 @@ class UserLoginSerializer(serializers.Serializer):
 
 class MobileGlobalSettingsSerializer(serializers.Serializer):
     logout_on_exit = serializers.BooleanField()
-    auth_token_last_use_to_expire = serializers.DateTimeField()
+    auth_token_last_use_to_expire = serializers.JSONField()
     

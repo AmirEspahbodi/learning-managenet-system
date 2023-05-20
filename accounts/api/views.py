@@ -249,15 +249,25 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
             token = self.user.auth_token_set.filter(Q(expiry__gt=now) & Q(last_use__gt=(now-token_settings.LAST_USE_TO_EXPIRY)))
             if token.count() >= token_limit_per_user:
                 return Response(
-                    {"non_field_errors": ["Maximum amount of tokens allowed per user exceeded."]},
+                    {"non_field_errors": "Maximum amount of tokens allowed per user exceeded."},
                     status=status.HTTP_403_FORBIDDEN
                 )
         return None
 
     def remove_expired_token_user(self):
         now = datetime.now()
-        self.user.auth_token_set.filter(Q(expiry__lte=now) | Q(last_use__lte=(now-token_settings.LAST_USE_TO_EXPIRY))).delete()
+        self.user.auth_token_set.filter(
+                Q(expiry__lte=now) | Q(last_use__lte=(now-token_settings.LAST_USE_TO_EXPIRY))
+            ).delete()
 
+    def get_post_response_data(self):
+        return {
+            ** super().get_post_response_data(),
+            'id': self.user.id,
+            'username': self.user.username,
+            'first_name': self.user.first_name,
+            'last_name': self.user.last_name
+        }
 
     def post (self, *args, **kwargs):
         serializer = self.serializer_class(data=self.request.data)
@@ -353,4 +363,5 @@ class GetMobileGlobalSettingsApiView(APIView):
                 'seconds': token_settings.LAST_USE_TO_EXPIRY.seconds
             }
         })
-        return Response()
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
