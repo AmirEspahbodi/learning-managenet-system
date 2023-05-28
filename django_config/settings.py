@@ -35,11 +35,15 @@ INSTALLED_APPS = [
     
     'accounts',
     'accounts.authtoken',
-    'api',
+    'apis',
     'courses',
     'teachers',
-    'trs'
+    'students',
+    'trs',
+    'assignments',
+    'exams'
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -47,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'account.middleware.RoleDetermination',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

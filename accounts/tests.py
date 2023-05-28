@@ -1,7 +1,7 @@
 from django.test import TestCase, RequestFactory
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
-from accounts.api.views import (
+from accounts.apis.views import (
     UserRegisterAPIView
 )
 

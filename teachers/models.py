@@ -10,7 +10,8 @@ class Teacher(models.Model):
         User,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name="teacher",
+        related_name="teacher_user",
+        db_index=True
     )
     experience = models.PositiveSmallIntegerField(blank=True, null=True)
     

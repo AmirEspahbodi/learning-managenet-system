@@ -1,4 +1,3 @@
-from typing import Iterable, Optional
 from django.db import models
 from teachers.models import Teacher
 from jalali_date import date2jalali
@@ -28,7 +27,8 @@ class Course(models.Model):
         primary_key=True,
         auto_created=True,
         serialize=False,
-        verbose_name='ID'
+        verbose_name='ID',
+        db_index=True
     )
     group_course_number = models.PositiveSmallIntegerField()
     course_title = models.ForeignKey(CourseTitle, on_delete=models.PROTECT, related_name="courses")
@@ -70,7 +70,7 @@ class Course(models.Model):
         return self.__str__()
 
 
-class GroupCourseTimes(models.Model):
+class CourseTimes(models.Model):
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,

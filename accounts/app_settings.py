@@ -26,14 +26,14 @@ DEFAULTS = {
     'EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES': timedelta(minutes=5),
     'SERIALIZERS': ObjDict(
         {
-            'EMAIL': 'accounts.api.serializers.EmailSerializer',
-            'EMAIL_VERIFICATION_CODE': 'accounts.api.serializers.EmailConfirmationCodeSerializer',
-            'PASSWORD_RESET_CONFIRM': 'accounts.api.serializers.PasswordResetConfirmSerializer',
-            'PASWORD_RESET_VERIFY_CODE': 'accounts.api.serializers.PasswordResetVerifyCodeSerializer',
-            'USER_REGISTER': 'accounts.api.serializers.UserRegisterSerializer',
-            'USER_LOGIN': 'accounts.api.serializers.UserLoginSerializer',
-            'PASSWORD_CHANGE': 'accounts.api.serializers.PasswordChangeSerializer',
-            'Mobile_Global_Settings':'accounts.api.serializers.MobileGlobalSettingsSerializer'
+            'EMAIL': 'accounts.apis.serializers.EmailSerializer',
+            'EMAIL_VERIFICATION_CODE': 'accounts.apis.serializers.EmailConfirmationCodeSerializer',
+            'PASSWORD_RESET_CONFIRM': 'accounts.apis.serializers.PasswordResetConfirmSerializer',
+            'PASWORD_RESET_VERIFY_CODE': 'accounts.apis.serializers.PasswordResetVerifyCodeSerializer',
+            'USER_REGISTER': 'accounts.apis.serializers.UserRegisterSerializer',
+            'USER_LOGIN': 'accounts.apis.serializers.UserLoginSerializer',
+            'PASSWORD_CHANGE': 'accounts.apis.serializers.PasswordChangeSerializer',
+            'Mobile_Global_Settings':'accounts.apis.serializers.MobileGlobalSettingsSerializer'
         }
     ),
     'MODELS': ObjDict(

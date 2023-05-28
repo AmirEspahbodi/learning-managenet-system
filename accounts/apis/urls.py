@@ -1,5 +1,5 @@
 from django.urls import path
-from accounts.api import views
+from accounts.apis import views
 urlpatterns = [
     path('token_verify/', views.AuthTokenVarifyApiView.as_view(), name="token_status"),
     path('register/', views.UserRegisterAPIView.as_view(), name="user_register"),
