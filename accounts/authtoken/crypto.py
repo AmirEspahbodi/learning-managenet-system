@@ -1,13 +1,9 @@
 import binascii
 from os import urandom as generate_bytes
-
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-
 from accounts.authtoken.app_settings import token_settings
 
-sha = token_settings.SECURE_HASH_ALGORITHM
 
+hash_func = token_settings.SECURE_HASH_ALGORITHM
 
 def create_token_string():
     return binascii.hexlify(
@@ -22,16 +18,28 @@ def make_hex_compatible(token: str) -> str:
     """
     return binascii.unhexlify(binascii.hexlify(bytes(token, 'utf-8')))
 
-
-def hash_token(token):
-    '''
+def hash_token(token: str) -> str:
+    """
     Calculates the hash of a token.
-    input is unhexlified
+    Token must contain an even number of hex digits or
+    a binascii.Error exception will be raised.
+    """
+    digest = hash_func()
+    digest.update(make_hex_compatible(token))
+    return digest.hexdigest()
 
-    token must contain an even number of hex digits or a binascii.Error
-    exception will be raised
-    '''
-    digest = hashes.Hash(sha(), backend=default_backend())
-    digest.update(binascii.unhexlify(token))
-    return binascii.hexlify(digest.finalize()).decode()
+# from cryptography.hazmat.backends import default_backend
+# from cryptography.hazmat.primitives import hashes
+# sha = token_settings.SECURE_HASH_ALGORITHM
+# def hash_token(token):
+#     '''
+#     Calculates the hash of a token.
+#     input is unhexlified
+
+#     token must contain an even number of hex digits or a binascii.Error
+#     exception will be raised
+#     '''
+#     digest = hashes.Hash(sha(), backend=default_backend())
+#     digest.update(binascii.unhexlify(token))
+#     return binascii.hexlify(digest.finalize()).decode()
 

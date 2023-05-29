@@ -70,7 +70,7 @@ class Course(models.Model):
         return self.__str__()
 
 
-class CourseTimes(models.Model):
+class CourseTime(models.Model):
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
@@ -95,10 +95,10 @@ class CourseTimes(models.Model):
                 fields=[
                     'time_slot', 'semester'
                 ],
-                name='unique_course_times'
+                name='unique_courses_course_time'
             )
         ]
-    
+        db_table = "courses_course_time"
     def __str__(self):
         return f"{self.time_slot} {self.course}"
 
@@ -122,9 +122,13 @@ class Session(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = [
-            'date', 
-            'time_slot'
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'date', 'time_slot'
+                ],
+                name='unique_session_date_time_slot'
+            )
         ]
 
     def get_jalali_date(self):

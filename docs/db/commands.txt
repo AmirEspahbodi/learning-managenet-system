@@ -1,0 +1,7 @@
+pip install django-extensions pyparsing pydot pydot-ng 
+
+# go docs/db directory
+
+python .\manage.py graph_models -a >> erd.dot
+
+python .\manage.py graph_models --pydot -a -o -g erd.png

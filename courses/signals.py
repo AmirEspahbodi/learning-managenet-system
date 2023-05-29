@@ -2,11 +2,11 @@ from datetime import timedelta
 
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from .models import CourseTimes, Session
+from .models import CourseTime, Session
 from django.db.models import Q
 
 
-@receiver(pre_save, sender=CourseTimes)
+@receiver(pre_save, sender=CourseTime)
 def set_semesterID_by_year_and_semester(sender, instance, **kwargs):
     instance.semester = instance.course.semester
 
@@ -22,7 +22,7 @@ def create_session(course, date, time_slot):
         session.save()
 
 
-@receiver(post_save, sender=CourseTimes)
+@receiver(post_save, sender=CourseTime)
 def generate_sessions_for_group_courses_by_times(sender, instance, created, **kwargs):
     if created:
         current_date = instance.course.start_date

@@ -1,4 +1,4 @@
-import datetime
+from datetime import timedelta
 from random import randint
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
@@ -139,9 +139,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def is_teacher(self):
         return self.role % Roles.TEACHER == 0
 
-    def is_secretary(self):
-        return self.role % Roles.SECRETARY == 0
-
     def is_supervisor(self):
         return self.role % Roles.SUPERVISOR == 0
 
@@ -196,6 +193,8 @@ class UserInformation(models.Model):
         validators=[HomePhoneNumberValidator],
         blank=True, null=True
     )
+    class Meta:
+        db_table = "accounts_user_information"
 
 
 class VerificationCodeMixin(models.Model):
@@ -208,7 +207,7 @@ class VerificationCodeMixin(models.Model):
         on_delete=models.CASCADE
     )
     created_at = models.DateTimeField(
-        default=datetime.datetime.utcnow,
+        auto_now_add=True,
         verbose_name=_("When was this token generated")
     )
     ip_address = models.GenericIPAddressField(
@@ -229,20 +228,23 @@ class VerificationCodeMixin(models.Model):
     def code_remaining_time(self):
         remainingـtime = (
                 self.created_at + account_settings.EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES
-            ) - datetime.datetime.utcnow()
-        return remainingـtime if remainingـtime > datetime.timedelta() else None
-
+            ) - timezone.now()
+        return remainingـtime if remainingـtime > timedelta() else None
+    
+    def __str__(self):
+        return f"{self.user} | {self.code}"
+    
     class Meta:
         abstract = True
 
 
 class EmailVerificationCode(VerificationCodeMixin):
-    def __str__(self):
-        return f"{self.user} | {self.code}"
+    class Meta:
+        db_table = "accounts_email_verification_code"
 
 class PasswordResetCode(VerificationCodeMixin):
-    def __str__(self):
-        return f"{self.user} | {self.code}"
+    class Meta:
+        db_table = "accounts_password_reset_code"
 
 
 def generate_verification_code(cls):

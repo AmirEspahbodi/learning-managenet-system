@@ -30,7 +30,8 @@ class TeacherPublished(models.Model):
     publisher = models.CharField(max_length=300)
     def __str__(self):
         return str(self.published[:50]+self.publisher[:50])
-
+    class Meta:
+        db_table = "teachers_teacher_published"
 
 class TeacherEducation(models.Model):
     teacher = models.ForeignKey(
@@ -41,3 +42,5 @@ class TeacherEducation(models.Model):
     university = models.CharField(max_length=300)
     def __str__(self):
         return str(self.education[:50]+self.university[:50])
+    class Meta:
+        db_table = "teachers_teacher_education"

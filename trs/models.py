@@ -65,9 +65,11 @@ class TimeSlot(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['room_number', 'day', 'start'],
-                name='unique_TimeSlot'
+                name='unique_trs_time_slot'
             )
         ]
+        db_table = "trs_time_slot"
+        db_table_comment = "The time period depends on the day of the week and the room."
 
     def __str__(self):
         return f"{self.room_number} {Days_Of_Week.labels[self.day-1]} {self.start} {self.end}"

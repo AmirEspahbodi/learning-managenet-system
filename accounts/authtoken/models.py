@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 
 from django.conf import settings
 from django.db import models
@@ -28,7 +28,7 @@ class AuthTokenManager(models.Manager):
         return instance, token
 
 def expiry_set():
-    return datetime.now() + token_settings.TOKEN_TTL
+    return timezone.now() + token_settings.TOKEN_TTL
 
 class AuthToken(models.Model):
 
@@ -50,7 +50,8 @@ class AuthToken(models.Model):
 
     def __str__(self):
         return '%s : %s' % (self.digest, self.user)
-
+    class Meta:
+        db_table = "authtoken_auth_token"
 
 class AuthTokenInformation(models.Model):
     authToken = models.OneToOneField(
@@ -71,3 +72,5 @@ class AuthTokenInformation(models.Model):
         default="",
         blank=True,
     )
+    class Meta:
+        db_table = "authtoken_auth_token_information"

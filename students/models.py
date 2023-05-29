@@ -1,13 +1,14 @@
 from django.db import models
 
 from django.contrib.auth import get_user_model
-from courses.models import Course, CourseTimes
+from courses.models import Course
 # Create your models here.
 
-CustomUser = get_user_model()
+User = get_user_model()
+
 class Student(models.Model):
     user = models.OneToOneField(
-        CustomUser,
+        User,
         primary_key=True,
         on_delete=models.CASCADE,
         related_name='student_user',
@@ -21,7 +22,7 @@ class Student(models.Model):
         return f"student: {self.user.username} ({self.user.last_name})"
 
 
-class StudentTakes(models.Model):
+class StudentEnroll(models.Model):
     id = models.BigAutoField(
         auto_created=True,
         primary_key=True,
@@ -31,7 +32,7 @@ class StudentTakes(models.Model):
     student = models.ForeignKey(
         Student,
         on_delete=models.CASCADE,
-        related_name='student_takes'
+        related_name='student_enrollments'
     )
     course = models.ForeignKey(
         Course,
@@ -45,7 +46,7 @@ class StudentTakes(models.Model):
         return f'{self.student} {self.course}'
 
     class Meta:
-            constraints = [
+        constraints = [
             models.UniqueConstraint(
                 fields=[
                     'student',
@@ -54,3 +55,5 @@ class StudentTakes(models.Model):
                 name='unique_student_course'
             )
         ]
+        db_table = "students_student_enroll"
+        db_table_comment = "It shows the student's enrollment in the course"

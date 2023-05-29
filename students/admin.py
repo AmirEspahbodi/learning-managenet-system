@@ -1,25 +1,25 @@
 from django.contrib import admin
 
 
-from .models import Student, StudentTakes
+from .models import Student, StudentEnroll
 # Register your models here.
 
 
-class StudentTakesInlines(admin.TabularInline):
-    model = StudentTakes
+class StudentEnrollInlines(admin.TabularInline):
+    model = StudentEnroll
     readonly_fields = ('is_student_paid_percentage', )
 
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    inlines = [StudentTakesInlines]
+    inlines = [StudentEnrollInlines]
     raw_id_fields = ('user',)
     list_display = ( 'user', 'school', 'degree', 'field')
     list_filter = ('school', 'degree', 'field', )
     ordering = ('-user', )
 
 
-@admin.register(StudentTakes)
-class StudentTakesAdmin(admin.ModelAdmin):
-    raw_id_fields = ('student', 'group_course')
+@admin.register(StudentEnroll)
+class StudentEnrollAdmin(admin.ModelAdmin):
+    raw_id_fields = ('student', 'course')
     readonly_fields = ('is_student_paid_percentage', )

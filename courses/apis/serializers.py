@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from courses.models import Course, Session, Course
+from courses.models import Course, Session, CourseTitle
 
 class StudentCourseSerializer1(ModelSerializer):
     class Meta:
@@ -22,5 +22,5 @@ class CourseSerializer(ModelSerializer):
 
 class CourseSerializer(ModelSerializer):
     class Meta:
-        model = Course
-        fields = ('course',)
+        model = CourseTitle
+        fields = ('title',)

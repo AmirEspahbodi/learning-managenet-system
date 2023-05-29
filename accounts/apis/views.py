@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
@@ -245,7 +245,7 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
     def check_exceeding_the_token_limit(self):
         token_limit_per_user = self.get_token_limit_per_user()
         if token_limit_per_user is not None:
-            now = datetime.now()
+            now = timezone.now()
             token = self.user.auth_token_set.filter(Q(expiry__gt=now) & Q(last_use__gt=(now-token_settings.LAST_USE_TO_EXPIRY)))
             if token.count() >= token_limit_per_user:
                 return Response(
@@ -255,7 +255,7 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
         return None
 
     def remove_expired_token_user(self):
-        now = datetime.now()
+        now = timezone.now()
         self.user.auth_token_set.filter(
                 Q(expiry__lte=now) | Q(last_use__lte=(now-token_settings.LAST_USE_TO_EXPIRY))
             ).delete()
@@ -292,7 +292,7 @@ class LogoutView(APIView):
         request._auth.delete()
         user_logged_out.send(sender=request.user.__class__,
                              request=request, user=request.user)
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
+        return Response({'status':'ok'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class LogoutAllView(APIView):
@@ -306,7 +306,7 @@ class LogoutAllView(APIView):
         request.user.auth_token_set.all().delete()
         user_logged_out.send(sender=request.user.__class__,
                              request=request, user=request.user)
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
+        return Response({'status':'ok'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class VerifyToken(APIView):
@@ -339,7 +339,7 @@ class AuthTokenVarifyApiView(APIView):
             _, authtoken = TokenAuthentication().authenticate_credentials(token)
         except exceptions.AuthenticationFailed as e:
             return Response({'details':e.detail}, status=status.HTTP_401_UNAUTHORIZED)
-        remain_time = authtoken.expiry - datetime.now()
+        remain_time = authtoken.expiry - timezone.now()
         ttu = token_settings.LAST_USE_TO_EXPIRY
         return Response(
             {

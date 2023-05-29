@@ -5,7 +5,8 @@ from accounts.app_settings import ObjDict
 
 
 DEFAULTS = {
-    'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',
+    # 'SECURE_HASH_ALGORITHM': 'cryptography.hazmat.primitives.hashes.SHA512',
+    'SECURE_HASH_ALGORITHM': 'hashlib.sha3_512',
     'AUTH_TOKEN_CHARACTER_LENGTH': 64,
     'TOKEN_TTL': timedelta(hours=10),
     'LAST_USE_TO_EXPIRY': timedelta(hours=1),

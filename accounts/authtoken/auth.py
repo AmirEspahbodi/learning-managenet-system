@@ -5,7 +5,7 @@ except ImportError:
         return a == b
 
 import binascii
-from datetime import datetime
+from django.utils import timezone
 
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions
@@ -80,7 +80,7 @@ class TokenAuthentication(BaseAuthentication):
 
     def renew_token(self, auth_token):
         current_expiry = auth_token.expiry
-        new_expiry = datetime.now() + token_settings.TOKEN_TTL
+        new_expiry = timezone.now() + token_settings.TOKEN_TTL
         auth_token.expiry = new_expiry
         # Throttle refreshing of token to avoid db writes
         delta = (new_expiry - current_expiry).total_seconds()
@@ -98,7 +98,10 @@ class TokenAuthentication(BaseAuthentication):
         return token_settings.AUTH_HEADER_PREFIX
 
     def token_not_ok(self, auth_token, update_last_use=True):
-        if auth_token.expiry < datetime.now() or (auth_token.last_use + token_settings.LAST_USE_TO_EXPIRY) < datetime.now():
+        
+        if  auth_token.expiry < timezone.now() or\
+            (auth_token.last_use + token_settings.LAST_USE_TO_EXPIRY) < timezone.now()\
+            :
             username = auth_token.user.get_username()
             auth_token.delete()
             token_expired.send(sender=self.__class__,

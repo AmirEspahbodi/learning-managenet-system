@@ -204,7 +204,7 @@ def check_existing_user_verifivation_codes(VerificationCode, user):
             else:
                 return (
                     {
-                        "detail": "too much requests! wait",
+                        "detail": "too much requests!",
                         "time": {
                             'hours': int(remain_time.seconds/3600),
                             'minutes': int((remain_time.seconds/60) % 60),
