@@ -33,7 +33,7 @@ class VERIFICATION_STATUS(models.IntegerChoices):
    
 class MyUserManager(UserManager):
     def create_user(self, username, email=None, password=None, **extra_fields):
-        if extra_fields.get('role') % Roles.ADMIN[0] == 0:
+        if extra_fields.get('role') % Roles.ADMIN.numerator == 0:
             raise ValueError("You are not allowed.")
         extra_fields.setdefault("is_superuser", False)
         return self._create_user(username, email, password, **extra_fields)
@@ -47,7 +47,7 @@ class MyUserManager(UserManager):
             raise ValueError("Superuser must have is_superuser=True.")
         return self._create_user(username, email, password, **extra_fields)
 
- 
+
 class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(_("first name"), max_length=150, blank=True)
     last_name = models.CharField(_("last name"), max_length=150, blank=True)
@@ -142,6 +142,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     def is_supervisor(self):
         return self.role % Roles.SUPERVISOR == 0
 
+    def __str__(self):
+        return f"{self.username} {self.first_name} {self.last_name}"
 
 class UserInformation(models.Model):
     user = models.OneToOneField(

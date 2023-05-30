@@ -7,5 +7,6 @@ from accounts.models import Roles
 def set_is_teacher_for_teacher_user(sender, instance, created, **kwargs):
     if created:
         user = instance.user
-        user.role *= Roles.TEACHER
-        user.save()
+        if not user.is_teacher():
+            user.role *= Roles.TEACHER
+            user.save()

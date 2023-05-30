@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
@@ -25,10 +25,11 @@ def create_session(course, date, time_slot):
 @receiver(post_save, sender=CourseTime)
 def generate_sessions_for_group_courses_by_times(sender, instance, created, **kwargs):
     if created:
-        current_date = instance.course.start_date
-        end_date = instance.course.end_date
+        
+        current_date = datetime.strptime(instance.course.start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(instance.course.end_date, '%Y-%m-%d').date()
         time_slot = instance.time_slot
-
+        
         time_slot_day = time_slot.day-1
         current_date_day = current_date.weekday()
 

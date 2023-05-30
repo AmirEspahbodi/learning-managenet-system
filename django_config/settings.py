@@ -32,6 +32,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'phonenumber_field',
+    'django_extensions',
     
     'accounts',
     'accounts.authtoken',
@@ -151,3 +152,5 @@ REST_FRAMEWORK = {
 ## MEDIA
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+RUNSCRIPT_CHDIR = BASE_DIR / 'scripts'

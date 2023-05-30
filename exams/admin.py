@@ -7,7 +7,8 @@ class EnrolledStudenTakeExamInline(admin.TabularInline):
     model = EnrolledStudenTakeExam
     can_delete = False
     readonly_fields = ('exam', 'student_enroll', 'visit_datetime', 'finish_datetime', 'score')
-    
+
+
 class FTQuestionInline(admin.TabularInline):
     model = FTQuestion
     can_delete = False
