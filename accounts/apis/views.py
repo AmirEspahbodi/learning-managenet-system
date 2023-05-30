@@ -19,7 +19,6 @@ from accounts import utils
 
 UserModel = get_user_model()
 
-
 class VerifyVerificationCodeMixin:
     def verify_verification_code(self, code=None, verificationCode=None, delete_code=False):
         if not verificationCode:

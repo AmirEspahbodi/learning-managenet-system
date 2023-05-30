@@ -1,51 +1,49 @@
-from django.test import TestCase, RequestFactory
+from django.test import TestCase, Client
 from django.core.exceptions import ObjectDoesNotExist
+from django.urls import reverse
 from django.contrib.auth import get_user_model
 from accounts.apis.views import (
     UserRegisterAPIView
 )
 
 # Create your tests here.
+client = Client()
 User = get_user_model()
 
-
 class UserObjectTestCase(TestCase):
-    def setUp(self):
-        self.factory = RequestFactory()
-
     def register_endpoint_request(self, data):
-        request = self.factory.post(
-            '127.0.0.1:8000/api/accounts/register/',
-            content_type='application/json',
+        return client.post(
+            reverse('apis:accounts:user_register'),
             data=data
         )
-        response  = UserRegisterAPIView.as_view()(request)
-        return response
     
     def test_register_endpoint_status_code(self):
-        """send a post request to /api/accounts/register/"""
         response = self.register_endpoint_request({
-                "first_name":"test1",
-                "last_name":"test",
-                "username":"test1",
-                "email":"test1@test.test",
-                "phone_number":"+989013971301",
-                "password1":"Abcd_1234",
-                "password2":"Abcd_1234"
-            })
-        self.assertEqual(response.status_code, 200)
+            "first_name":"test a",
+            "last_name":"test",
+            "username":"test1",
+            "email":"test1@test.test",
+            "phone_number":"+989013971301",
+            "role":1,
+            "password1":"Abcd__1234",
+            "password2":"Abcd__1234"
+        })
+        print(response.content)
+        print(response.context)
+        self.assertEqual(response.status_code, 201)
 
         
     def test_register_endpoint_user_created(self):
         response = self.register_endpoint_request({
-                "first_name":"test1",
-                "last_name":"test",
-                "username":"test1",
-                "email":"test1@test.test",
-                "phone_number":"+989013971301",
-                "password1":"Abcd_1234",
-                "password2":"Abcd_1234"
-            })
+            "first_name":"test a",
+            "last_name":"test",
+            "username":"test1",
+            "email":"test1@test.test",
+            "phone_number":"+989013971301",
+            "role":1,
+            "password1":"Abcd__1234",
+            "password2":"Abcd__1234"
+        })
         try:
             user = User.objects.get(username = "test1")
         except ObjectDoesNotExist:
@@ -55,42 +53,46 @@ class UserObjectTestCase(TestCase):
 
     def test_register_endpoint_unique_username(self):
         response = self.register_endpoint_request({
-            "first_name":"test1",
+            "first_name":"test a",
             "last_name":"test",
             "username":"test1",
             "email":"test1@test.test",
             "phone_number":"+989013971301",
-            "password1":"Abcd_1234",
-            "password2":"Abcd_1234"
+            "role":1,
+            "password1":"Abcd__1234",
+            "password2":"Abcd__1234"
         })
         response2 = self.register_endpoint_request({
-            "first_name":"test1",
+            "first_name":"test a",
             "last_name":"test",
             "username":"test1",
             "email":"test2@test.test",
             "phone_number":"+989013971302",
-            "password1":"Abcd_1234",
-            "password2":"Abcd_1234"
+            "role":1,
+            "password1":"Abcd__1234",
+            "password2":"Abcd__1234"
         })
         response3 = self.register_endpoint_request({
-            "first_name":"test1",
+            "first_name":"test a",
             "last_name":"test",
-            "username":"test2",
+            "username":"test3",
             "email":"test1@test.test",
-            "phone_number":"+989013971302",
-            "password1":"Abcd_1234",
-            "password2":"Abcd_1234"
+            "phone_number":"+989013971303",
+            "role":1,
+            "password1":"Abcd__1234",
+            "password2":"Abcd__1234"
         })
         response4 = self.register_endpoint_request({
-            "first_name":"test1",
+            "first_name":"test a",
             "last_name":"test",
-            "username":"test2",
-            "email":"test2@test.test",
+            "username":"test4",
+            "email":"test4@test.test",
             "phone_number":"+989013971301",
-            "password1":"Abcd_1234",
-            "password2":"Abcd_1234"
+            "role":1,
+            "password1":"Abcd__1234",
+            "password2":"Abcd__1234"
         })
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response2.status_code, 409)
-        self.assertEqual(response3.status_code, 409)
-        self.assertEqual(response4.status_code, 409)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response2.status_code, 400)
+        self.assertEqual(response3.status_code, 400)
+        self.assertEqual(response4.status_code, 400)

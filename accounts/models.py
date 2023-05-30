@@ -23,7 +23,6 @@ class Roles(models.IntegerChoices):
     TEACHER_SUPERVISOR = TEACHER[0]*SUPERVISOR[0], 'teacher and supervisor'
     TEACHER_ADMIN = TEACHER[0]*ADMIN[0], 'teacher and admin'
 
-
 class VERIFICATION_STATUS(models.IntegerChoices):
     NONE = 1, _("None of them have been verified.")
     PHONE = 2, _("The mobile number is verified.")
@@ -141,6 +140,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def is_supervisor(self):
         return self.role % Roles.SUPERVISOR == 0
+
+    def set_rule(self, role):
+        if self.role % role !=0:
+            self.role *= role
+        self.save()
 
     def __str__(self):
         return f"{self.username} {self.first_name} {self.last_name}"
