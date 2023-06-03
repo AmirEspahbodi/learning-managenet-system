@@ -43,7 +43,7 @@ class StudentEnroll(models.Model):
     is_student_paid_percentage = models.BooleanField(default=False)
     
     def __str__(self):
-        return f'{self.student} {self.course}'
+        return f'student=({self.student.user}) course=({self.course})'
 
     class Meta:
         constraints = [

@@ -12,14 +12,6 @@ def get_teacher(request):
 
 class RoleDetermination(MiddlewareMixin):
     def process_request(self, request):
-        if not hasattr(request, "session"):
-            raise ImproperlyConfigured(
-                "The Django authentication middleware requires session "
-                "middleware to be installed. Edit your MIDDLEWARE setting to "
-                "insert "
-                "'django.contrib.sessions.middleware.SessionMiddleware' before "
-                "'django.contrib.auth.middleware.AuthenticationMiddleware'."
-            )
         if request.user.is_authenticated:
             if request.user.role == Roles.STUDENT:
                 request.student = SimpleLazyObject(lambda: get_student(request))

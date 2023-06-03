@@ -2,66 +2,54 @@ from accounts.models import User, Roles
 from trs.models import Room, Semester, TimeSlot, Semseters,Days_Of_Week
 from courses.models import CourseTitle, Course, CourseTime
 from teachers.models import Teacher
+from students.models import Student, StudentEnroll
 
 def run():
     superuser = User.objects.create_superuser(
             'amir',
             email='amir@amir.amir',
-            password='amir8731',
+            password='Abcd_1234',
             first_name="amir",
             last_name='espahbodi',
             phone_number='+989013971301',
         )
     print(f"superuser {superuser} created!\n\n")
 
+
     users: list[User] = [
         User.objects.create_user(
-            'amir1',
-            email='amir1@amir.amir',
-            password='Abcd_1234',
-            first_name="amir1",
-            last_name='espahbodi1',
-            phone_number='+989013971302',
+            f'teacher{i}' if i<3 else f'student{i-3}',
+            email=f'teacher{i}@teacher.teacher' if i<3 else f'student{i-3}@student.student' ,
+            password=f'Abcd_1234',
+            first_name=f"teacher{i}" if i<3 else f"student{i-3}",
+            last_name=f'teacher' if i<3 else f'student',
+            phone_number=f'+98901397140{i}' if i<3 else f'+98901397150{i-3}',
             role=Roles.NOT_DEFINED
-        ),
-        User.objects.create_user(
-            'amir2',
-            email='amir2@amir.amir',
-            password='Abcd_1234',
-            first_name="amir2",
-            last_name='espahbodi2',
-            phone_number='+989013971303',
-            role=Roles.NOT_DEFINED
-        ),
-        User.objects.create_user(
-            'amir3',
-            email='amir3@amir.amir',
-            password='Abcd_1234',
-            first_name="amir3",
-            last_name='espahbodi3',
-            phone_number='+989013971304',
-            role=Roles.NOT_DEFINED
-        ),
-        User.objects.create_user(
-            'amir4',
-            email='amir4@amir.amir',
-            password='Abcd_1234',
-            first_name="amir4",
-            last_name='espahbodi4',
-            phone_number='+989013971305',
-            role=Roles.NOT_DEFINED
-        ),
-        User.objects.create_user(
-            'amir5',
-            email='amir5@amir.amir',
-            password='Abcd_1234',
-            first_name="amir5",
-            last_name='espahbodi5',
-            phone_number='+989013971306',
-            role=Roles.NOT_DEFINED
-        ),
+        )
+        for i in range(10)
     ]
     print(f"users {users} created!\n\n")
+
+
+    student: list[Student] = [
+        Student.objects.create(
+            user=users[i],
+            school="some", 
+            degree=1, 
+            field="some"
+        ) for i in range(3, 10)
+    ]
+    print(f"student {student} created!\n\n")
+
+
+    teachers: list[Teacher] = [
+        Teacher.objects.create(
+            user=users[i],
+            experience=30
+        ) for i in range(3)
+    ]
+    print(f"teachers {teachers} created!\n\n")
+
 
     rooms: list[Room] = [
         Room.objects.create(
@@ -75,6 +63,7 @@ def run():
     ]
     print(f"rooms {rooms} created!\n\n")
 
+
     semesters: list[Semester] = [
         Semester.objects.create(
             year = '1402-1403',
@@ -87,174 +76,24 @@ def run():
     ]
     print(f"semesters {semesters} created!\n\n")
 
+
+    times = [
+        {'start': '08:00:00','end': '09:30:00'},
+        {'start': '10:00:00','end': '11:30:00'},
+        {'start': '14:00:00','end': '15:30:00'}
+    ]
     timeslots:list[TimeSlot] = [
         TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.MONDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.MONDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.MONDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.MONDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.MONDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.MONDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        # ------------------------------------
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.TUESDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.TUESDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.TUESDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.TUESDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.TUESDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.TUESDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        # ------------------------------------
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.THURSDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.THURSDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.THURSDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.THURSDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.THURSDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.THURSDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        # ------------------------------------
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.SUNDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.SUNDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[0],
-            day=Days_Of_Week.SUNDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.SUNDAY,
-            start='08:00:00',
-            end='09:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.SUNDAY,
-            start='10:00:00',
-            end='11:30:00'
-        ),
-        TimeSlot.objects.create(
-            room_number=rooms[1],
-            day=Days_Of_Week.SUNDAY,
-            start='14:00:00',
-            end='15:30:00'
-        ),
-        # ------------------------------------
+            room_number=rooms[i],
+            day=day_of_week,
+            start=time['start'],
+            end=time['end']
+        ) 
+        for time in times 
+        for i in range(0,2) 
+        for day_of_week in [Days_Of_Week.MONDAY, Days_Of_Week.THURSDAY, Days_Of_Week.TUESDAY, Days_Of_Week.SUNDAY]
     ]
     print(f"timeslots {timeslots} created!\n\n")
-
-    
-    teachers: list[Teacher] = [
-        Teacher.objects.create(
-            user=users[0],
-            experience=20,
-        ),
-        Teacher.objects.create(
-            user=users[1],
-            experience=25
-        ),
-        Teacher.objects.create(
-            user=users[2],
-            experience=30
-        ),
-    ]
-    print(f"teachers {teachers} created!\n\n")
 
         
     coursetitles:list[CourseTitle] = [
@@ -270,108 +109,37 @@ def run():
     ]
     print(f"coursetitles {coursetitles} created!\n\n")
 
+
     courses: list[Course] = [
         Course.objects.create(
-            group_course_number=1,
-            course_title=coursetitles[0],
+            group_course_number=j,
+            course_title=coursetitles[i],
             semester=semesters[0],
-            teacher=teachers[0],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
+            teacher=teachers[i],
+            start_date='2023-6-1',
+            end_date='2023-9-1',
             tuition=10000000,
             percentage_required_for_tuition=27.5
-        ),
-        Course.objects.create(
-            group_course_number=2,
-            course_title=coursetitles[0],
-            semester=semesters[0],
-            teacher=teachers[0],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),
-        Course.objects.create(
-            group_course_number=3,
-            course_title=coursetitles[0],
-            semester=semesters[0],
-            teacher=teachers[0],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),
-        Course.objects.create(
-            group_course_number=1,
-            course_title=coursetitles[1],
-            semester=semesters[0],
-            teacher=teachers[1],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),
-        Course.objects.create(
-            group_course_number=2,
-            course_title=coursetitles[1],
-            semester=semesters[0],
-            teacher=teachers[1],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),
-        Course.objects.create(
-            group_course_number=3,
-            course_title=coursetitles[1],
-            semester=semesters[0],
-            teacher=teachers[1],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),        
-        Course.objects.create(
-            group_course_number=1,
-            course_title=coursetitles[2],
-            semester=semesters[0],
-            teacher=teachers[2],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),
-        Course.objects.create(
-            group_course_number=2,
-            course_title=coursetitles[2],
-            semester=semesters[0],
-            teacher=teachers[2],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),
-        Course.objects.create(
-            group_course_number=3,
-            course_title=coursetitles[2],
-            semester=semesters[0],
-            teacher=teachers[2],
-            start_date='2023-9-1',
-            end_date='2023-12-29',
-            tuition=10000000,
-            percentage_required_for_tuition=27.5
-        ),
+        ) for j in range(1,4) for i in range(0,3)
     ]
     print(f"courses {courses} created!\n\n")
 
-    course_time: list[CourseTime]=[]
-    for index in range(len(timeslots)):
-        course_time.append(
-            CourseTime.objects.create(
+
+    studentEnroll:list[StudentEnroll] = [
+        StudentEnroll.objects.create(
+            student=student[j],
+            course=courses[i], 
+        ) for j in range(0,len(student)) for i in range(0, len(courses)) if (i+j<len(student))
+    ]
+    print(f"studentEnroll {studentEnroll} created!\n\n")
+
+
+    course_time: list[CourseTime]=[
+        CourseTime.objects.create(
                 course=courses[index % len(courses)],
                 semester=courses[index % len(courses)].semester,
                 time_slot=timeslots[index]
-            )
         )
+        for index in range(len(timeslots))
+    ]
     print(f"course_time {course_time} created!\n\n")
-    

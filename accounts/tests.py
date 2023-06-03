@@ -24,12 +24,9 @@ class UserObjectTestCase(TestCase):
             "username":"test1",
             "email":"test1@test.test",
             "phone_number":"+989013971301",
-            "role":1,
             "password1":"Abcd__1234",
             "password2":"Abcd__1234"
         })
-        print(response.content)
-        print(response.context)
         self.assertEqual(response.status_code, 201)
 
         
@@ -40,7 +37,6 @@ class UserObjectTestCase(TestCase):
             "username":"test1",
             "email":"test1@test.test",
             "phone_number":"+989013971301",
-            "role":1,
             "password1":"Abcd__1234",
             "password2":"Abcd__1234"
         })
@@ -58,7 +54,6 @@ class UserObjectTestCase(TestCase):
             "username":"test1",
             "email":"test1@test.test",
             "phone_number":"+989013971301",
-            "role":1,
             "password1":"Abcd__1234",
             "password2":"Abcd__1234"
         })
@@ -68,7 +63,6 @@ class UserObjectTestCase(TestCase):
             "username":"test1",
             "email":"test2@test.test",
             "phone_number":"+989013971302",
-            "role":1,
             "password1":"Abcd__1234",
             "password2":"Abcd__1234"
         })
@@ -78,7 +72,6 @@ class UserObjectTestCase(TestCase):
             "username":"test3",
             "email":"test1@test.test",
             "phone_number":"+989013971303",
-            "role":1,
             "password1":"Abcd__1234",
             "password2":"Abcd__1234"
         })
@@ -88,7 +81,6 @@ class UserObjectTestCase(TestCase):
             "username":"test4",
             "email":"test4@test.test",
             "phone_number":"+989013971301",
-            "role":1,
             "password1":"Abcd__1234",
             "password2":"Abcd__1234"
         })

@@ -19,6 +19,7 @@ class Assignment(models.Model):
         related_name='assignments'
     )
     title = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(blank=True, null=True)
     assignment_number = models.PositiveSmallIntegerField(null=True, blank=True, editable=False)
     create_datetime = models.DateTimeField(auto_now_add=True)
     start_datetime = models.DateTimeField()
@@ -80,7 +81,7 @@ class FTQuestion(models.Model):
         Assignment, 
         on_delete=models.CASCADE)
     title = models.CharField(max_length=255, null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    text = models.TextField(null=True, blank=True)
     file = models.FileField(upload_to='assignment/questions/', null=True, blank=True)
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()

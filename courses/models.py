@@ -74,6 +74,7 @@ class CourseTime(models.Model):
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
+        related_name='course_times'
     )
     semester = models.ForeignKey(
         Semester,

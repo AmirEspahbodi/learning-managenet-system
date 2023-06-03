@@ -91,7 +91,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserModel
-        fields = ('first_name', 'last_name', 'email', 'username', 'phone_number', 'role', 'password1', 'password2')
+        fields = ('first_name', 'last_name', 'email', 'username', 'phone_number', 'password1', 'password2')
 
     def validate(self, data, *args, **kwargs):
         if data['password1'] != data['password2']:
@@ -112,16 +112,14 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        user = UserModel(
+        user = UserModel.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password1'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
-            email=validated_data['email'],
-            username=validated_data['username'],
             phone_number=validated_data['phone_number'],
-            role=validated_data['role']
         )
-        user.set_password(validated_data['password1'])
-        user.save()
         return user
 
 
@@ -201,4 +199,9 @@ class UserLoginSerializer(serializers.Serializer):
 class MobileGlobalSettingsSerializer(serializers.Serializer):
     logout_on_exit = serializers.BooleanField()
     auth_token_last_use_to_expire = serializers.JSONField()
-    
+
+
+class UserSerializerTeacherSearch(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ('first_name', 'last_name')

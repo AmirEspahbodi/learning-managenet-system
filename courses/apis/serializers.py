@@ -1,26 +1,41 @@
 from rest_framework.serializers import ModelSerializer
-from courses.models import Course, Session, CourseTitle
+from courses.models import Course, Session, CourseTitle, CourseTime
+from trs.apis.serializers import TimeSlotSerializer, SemesterSerializer
+from teachers.apis.serialisers import TeacherSerializer
+from assignments.apis.serializers import AssignmentSerializer
+from exams.apis.serializers import ExamSerializer
 
-class StudentCourseSerializer1(ModelSerializer):
+class CourseTimeSerializer(ModelSerializer):
+    semester = SemesterSerializer()
+    time_slot = TimeSlotSerializer()
     class Meta:
-        model = Course
-        fields = ('group_course_number', 'id')
+        model = CourseTime
+        fields = ('semester', 'time_slot')
 
-
-
-class SessionSerializer1(ModelSerializer):
-    class Meta:
-        model = Session
-        fields = ('id', 'session_number', 'get_jalali_date')
- 
-        
-class CourseSerializer(ModelSerializer):
-    class Meta:
-        model = Course
-        fields = ('id', 'group_course_number',
-                  'get_jalali_start_date', 'get_jalali_end_date', 'tuition', 'percentage_required_for_tuition')
-
-class CourseSerializer(ModelSerializer):
+class CourseTitleSerializer(ModelSerializer):
     class Meta:
         model = CourseTitle
         fields = ('title',)
+
+class CourseSerializer(ModelSerializer):
+    course_title = CourseTitleSerializer()
+    semester = SemesterSerializer()
+    teacher = TeacherSerializer()
+    class Meta:
+        model = Course
+        fields = ('id', 'course_title', 'teacher', 'group_course_number', 'semester')
+
+
+class CourseDetailSerializer(CourseSerializer):
+    course_times = CourseTimeSerializer(many=True, read_only=True)
+    class Meta:
+        model = Course
+        fields = ('id', 'course_title', 'teacher', 'group_course_number', 'semester', 'start_date', "end_date", 'course_times')
+
+class SessionSerializer(ModelSerializer):
+    time_slot = TimeSlotSerializer(read_only=True)
+    assignments = AssignmentSerializer(many=True, read_only=True)
+    exams = ExamSerializer(many=True, read_only=True)
+    class Meta:
+        model = Session
+        fields = ('id', 'course', 'session_number', 'date', 'time_slot', 'description', 'assignments', 'exams')

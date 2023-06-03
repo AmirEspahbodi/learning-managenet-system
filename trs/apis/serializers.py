@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from .models import TimeSlot, Semester
+from ..models import TimeSlot, Semester
 
 
 class TimeSlotSerializer(ModelSerializer):

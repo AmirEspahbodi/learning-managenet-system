@@ -11,7 +11,7 @@ class EnrolledStudenTakeAssignmentInline(admin.TabularInline):
 class FTQuestionInline(admin.TabularInline):
     model = FTQuestion
     can_delete = False
-    readonly_fields = ('assignment', 'title', 'description', 'file', 'start_datetime', 'end_datetime')
+    readonly_fields = ('assignment', 'title', 'text', 'file', 'start_datetime', 'end_datetime')
 
 
 @admin.register(Assignment)
@@ -39,4 +39,4 @@ class FTQuestionAdmin(admin.ModelAdmin):
     raw_id_fields = ('assignment',)
     ordering = ('start_datetime', 'end_datetime')
     list_filter = ('assignment__session__course', 'start_datetime', 'end_datetime')
-    list_display = ('assignment', 'title', 'description', 'start_datetime', 'end_datetime')
+    list_display = ('assignment', 'title', 'text', 'start_datetime', 'end_datetime')

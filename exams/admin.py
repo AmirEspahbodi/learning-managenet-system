@@ -12,7 +12,7 @@ class EnrolledStudenTakeExamInline(admin.TabularInline):
 class FTQuestionInline(admin.TabularInline):
     model = FTQuestion
     can_delete = False
-    readonly_fields = ('exam', 'title', 'description', 'file', 'start_datetime', 'end_datetime')
+    readonly_fields = ('exam', 'title', 'text', 'file', 'start_datetime', 'end_datetime')
 
 
 @admin.register(Exam)
@@ -40,4 +40,4 @@ class FTQuestionAdmin(admin.ModelAdmin):
     raw_id_fields = ('exam',)
     ordering = ('start_datetime', 'end_datetime')
     list_filter = ('exam__session__course', 'start_datetime', 'end_datetime')
-    list_display = ('exam', 'title', 'description', 'start_datetime', 'end_datetime')
+    list_display = ('exam', 'title', 'text', 'start_datetime', 'end_datetime')

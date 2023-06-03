@@ -13,7 +13,6 @@ from phonenumber_field import modelfields
 
 # Create your models here.
 
-
 class Roles(models.IntegerChoices):
     NOT_DEFINED = 1, 'not defined'
     STUDENT = 2, 'student'
@@ -32,6 +31,8 @@ class VERIFICATION_STATUS(models.IntegerChoices):
    
 class MyUserManager(UserManager):
     def create_user(self, username, email=None, password=None, **extra_fields):
+        if extra_fields.get('role') is None:
+            extra_fields.setdefault("role", Roles.NOT_DEFINED)
         if extra_fields.get('role') % Roles.ADMIN.numerator == 0:
             raise ValueError("You are not allowed.")
         extra_fields.setdefault("is_superuser", False)
@@ -147,7 +148,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.save()
 
     def __str__(self):
-        return f"{self.username} {self.first_name} {self.last_name}"
+        return f"{self.username}"
 
 class UserInformation(models.Model):
     user = models.OneToOneField(
