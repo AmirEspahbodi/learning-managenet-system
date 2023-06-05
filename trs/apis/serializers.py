@@ -6,7 +6,8 @@ class TimeSlotSerializer(ModelSerializer):
     class Meta:
         model = TimeSlot
         fields = ('room_number', 'day', 'start', 'end')
-        
+
+
 class SemesterSerializer(ModelSerializer):
     class Meta:
         model = Semester

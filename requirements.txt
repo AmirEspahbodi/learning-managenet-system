@@ -10,3 +10,4 @@ django_jalali[drf]
 django_jalali
 django-jalali-date 
 django-extensions
+django-cors-headers

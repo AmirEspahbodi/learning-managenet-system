@@ -2,8 +2,10 @@ from django.contrib import admin
 
 from accounts.authtoken.models import AuthToken, AuthTokenInformation
 
+
 class TokenInformationInline(admin.TabularInline):
     model = AuthTokenInformation
+
 
 @admin.register(AuthToken)
 class AuthTokenAdmin(admin.ModelAdmin):

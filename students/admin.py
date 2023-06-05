@@ -14,7 +14,7 @@ class StudentEnrollInlines(admin.TabularInline):
 class StudentAdmin(admin.ModelAdmin):
     inlines = [StudentEnrollInlines]
     raw_id_fields = ('user',)
-    list_display = ( 'user', 'school', 'degree', 'field')
+    list_display = ('user', 'school', 'degree', 'field')
     list_filter = ('school', 'degree', 'field', )
     ordering = ('-user', )
 

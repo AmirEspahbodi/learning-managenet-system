@@ -5,6 +5,7 @@ from accounts.models import UserInformation
 
 User = get_user_model()
 
+
 @receiver(post_save, sender=User)
 def craete_user_information(sender, instance, created, **kwargs):
     if created:

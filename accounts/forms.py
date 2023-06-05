@@ -38,7 +38,7 @@ class PasswordResetForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
-        
+
     def clean_new_password2(self):
         password1 = self.cleaned_data.get("new_password1")
         password2 = self.cleaned_data.get("new_password2")

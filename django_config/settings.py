@@ -33,7 +33,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'phonenumber_field',
     'django_extensions',
-    
+    'corsheaders',
+
     'accounts',
     'accounts.authtoken',
     'apis',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -148,8 +150,12 @@ REST_FRAMEWORK = {
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-## MEDIA
+# MEDIA
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 RUNSCRIPT_CHDIR = BASE_DIR / 'scripts'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+]

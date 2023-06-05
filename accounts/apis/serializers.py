@@ -12,6 +12,7 @@ from accounts.app_settings import account_settings
 
 UserModel = get_user_model()
 
+
 class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
@@ -26,13 +27,15 @@ class PasswordResetVerifyCodeSerializer(serializers.Serializer):
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     code = serializers.IntegerField(required=True)
-    new_password1 = serializers.CharField(required=True, validators=[validate_password])
+    new_password1 = serializers.CharField(
+        required=True, validators=[validate_password])
     new_password2 = serializers.CharField(required=True)
     set_password_form_class = SetPasswordForm
 
     def validate(self, attrs):
         try:
-            resetCode = account_settings.MODELS.PASSWORD_RESET_CODE.objects.get(code=attrs['code'])
+            resetCode = account_settings.MODELS.PASSWORD_RESET_CODE.objects.get(
+                code=attrs['code'])
         except ObjectDoesNotExist:
             raise ValidationError('wrong code')
         self.set_password_form = self.set_password_form_class(
@@ -41,13 +44,14 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         if not self.set_password_form.is_valid():
             raise serializers.ValidationError(self.set_password_form.errors)
-        attrs['verificationCode']=resetCode
+        attrs['verificationCode'] = resetCode
         return attrs
 
 
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(max_length=128)
-    new_password1 = serializers.CharField(max_length=128, validators=[validate_password])
+    new_password1 = serializers.CharField(
+        max_length=128, validators=[validate_password])
     new_password2 = serializers.CharField(max_length=128)
 
     set_password_form_class = SetPasswordForm
@@ -71,7 +75,8 @@ class PasswordChangeSerializer(serializers.Serializer):
         )
 
         if all(invalid_password_conditions):
-            err_msg = _('Your old password was entered incorrectly. Please enter it again.')
+            err_msg = _(
+                'Your old password was entered incorrectly. Please enter it again.')
             raise serializers.ValidationError(err_msg)
         return value
 
@@ -86,31 +91,36 @@ class PasswordChangeSerializer(serializers.Serializer):
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password1 = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password1 = serializers.CharField(
+        write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
-    
+
     class Meta:
         model = UserModel
-        fields = ('first_name', 'last_name', 'email', 'username', 'phone_number', 'password1', 'password2')
+        fields = ('first_name', 'last_name', 'email', 'username',
+                  'phone_number', 'password1', 'password2')
 
     def validate(self, data, *args, **kwargs):
         if data['password1'] != data['password2']:
             raise serializers.ValidationError(
                 {'password': "The two password fields didn't match."}
             )
-        
+
         # use default django password validator (user information similarity) too
-        first_name_error = name_validator(data['first_name'], return_error=True)
+        first_name_error = name_validator(
+            data['first_name'], return_error=True)
         last_name_error = name_validator(data['last_name'], return_error=True)
         name_errors = {}
-        name_errors.update({'first_name':first_name_error} if first_name_error else {})
-        name_errors.update({'last_name':last_name_error} if last_name_error else {})
+        name_errors.update({'first_name': first_name_error}
+                           if first_name_error else {})
+        name_errors.update({'last_name': last_name_error}
+                           if last_name_error else {})
         if name_errors:
             raise serializers.ValidationError(
                 name_errors
             )
         return data
-    
+
     def create(self, validated_data):
         user = UserModel.objects.create_user(
             username=validated_data['username'],
@@ -137,9 +147,10 @@ class UserLoginSerializer(serializers.Serializer):
 
     def get_auth_user(self, username, email, phone_number, password):
         if not ((username or email or phone_number) and password):
-            msg = {'login_field':'not valid login information.'}
+            msg = {'login_field': 'not valid login information.'}
             raise exceptions.ValidationError(msg)
-        user = authenticate(self.context.get('request'), username=username, email=email, phone_number=phone_number, password=password)
+        user = authenticate(self.context.get('request'), username=username,
+                            email=email, phone_number=phone_number, password=password)
         return user
 
     @staticmethod
@@ -184,10 +195,10 @@ class UserLoginSerializer(serializers.Serializer):
             except UserModel.DoesNotExist:
                 pass
 
-            msg = {'non_field_errors':  'Unable to log in with provided credentials.' 
-                                        if user else 
+            msg = {'non_field_errors':  'Unable to log in with provided credentials.'
+                                        if user else
                                         'no user found with with provided credentials'
-                                        }
+                   }
             raise exceptions.ValidationError(msg)
 
         self.validate_auth_user_status(user)

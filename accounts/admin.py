@@ -9,8 +9,10 @@ from .models import UserInformation, PasswordResetCode, EmailVerificationCode
 
 User = get_user_model()
 
+
 class UserInfoAdminInline(StackedInline):
     model = UserInformation
+
 
 @admin.register(User)
 class UserAdmin(UserAdmin):
@@ -18,7 +20,8 @@ class UserAdmin(UserAdmin):
     add_form = UserCreationForm
     form = UserChangeForm
     list_filter = ("role", "is_superuser", "is_active", "groups")
-    list_display = ("username", "email", "phone_number", "role", "first_name", "last_name")
+    list_display = ("username", "email", "phone_number",
+                    "role", "first_name", "last_name")
     add_fieldsets = (
         (
             None,
@@ -30,7 +33,8 @@ class UserAdmin(UserAdmin):
     )
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name", "email", "phone_number")}),
+        (_("Personal info"), {
+         "fields": ("first_name", "last_name", "email", "phone_number")}),
         (
             _("Permissions"),
             {
@@ -46,6 +50,7 @@ class UserAdmin(UserAdmin):
         ),
         (_("Important dates"), {"fields": ("last_login",)}),
     )
+
 
 @admin.register(PasswordResetCode)
 class ResetPasswordTokenAdmin(admin.ModelAdmin):

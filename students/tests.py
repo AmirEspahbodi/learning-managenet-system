@@ -8,28 +8,29 @@ from django.contrib.auth import get_user_model
 clientAPI = APIClient()
 User = get_user_model()
 
+
 class StudentRegister(TestCase):
     def setUp(self):
         self.student_data = \
-        {
-            "school": "some",
-            "degree": 1,
-            "field": "some",
-            "user": {
-                "first_name": "test a",
-                "last_name": "test",
-                "email": "test1@test.test",
-                "username": "test1",
-                "phone_number": "+989013971501",
-                "password1": "Abcd__8731",
-                "password2": "Abcd__8731"
+            {
+                "school": "some",
+                "degree": 1,
+                "field": "some",
+                "user": {
+                    "first_name": "test a",
+                    "last_name": "test",
+                    "email": "test1@test.test",
+                    "username": "test1",
+                    "phone_number": "+989013971501",
+                    "password1": "Abcd__8731",
+                    "password2": "Abcd__8731"
+                }
             }
-        }
         self.student_register_url = reverse("apis:students:register")
-        
+
     def test_user_created_has_student_role(self):
         response = clientAPI.post(
-            self.student_register_url, 
+            self.student_register_url,
             self.student_data,
             format='json'
         )

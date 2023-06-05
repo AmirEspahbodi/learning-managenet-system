@@ -8,14 +8,17 @@ from courses.models import Course
 class TeacherPublishedInline(admin.TabularInline):
     model = TeacherPublished
     extra = 1
-    
+
+
 class TeacherEducationInline(admin.TabularInline):
     model = TeacherEducation
     extra = 1
 
+
 class TeacherCoursesInline(admin.TabularInline):
     model = Course
     extra = 1
+
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):

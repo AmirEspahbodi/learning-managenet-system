@@ -22,13 +22,14 @@ class Roles(models.IntegerChoices):
     TEACHER_SUPERVISOR = TEACHER[0]*SUPERVISOR[0], 'teacher and supervisor'
     TEACHER_ADMIN = TEACHER[0]*ADMIN[0], 'teacher and admin'
 
+
 class VERIFICATION_STATUS(models.IntegerChoices):
     NONE = 1, _("None of them have been verified.")
     PHONE = 2, _("The mobile number is verified.")
     EMAIL = 3, _("Email address is verified.")
     BOTH = 6, _("Both of them are verified.")
 
-   
+
 class MyUserManager(UserManager):
     def create_user(self, username, email=None, password=None, **extra_fields):
         if extra_fields.get('role') is None:
@@ -119,16 +120,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         """Return the short name for the user."""
         return self.first_name
-    
+
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
 
     def is_email_verified(self):
         return self.verification_status % VERIFICATION_STATUS.EMAIL == 0
-    
+
     def is_phone_number_verified(self):
         return self.verification_status % VERIFICATION_STATUS.PHONE == 0
-    
+
     @property
     def is_staff(self):
         return self.role % Roles.ADMIN == 0
@@ -143,16 +144,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.role % Roles.SUPERVISOR == 0
 
     def set_rule(self, role):
-        if self.role % role !=0:
+        if self.role % role != 0:
             self.role *= role
         self.save()
 
     def __str__(self):
         return f"{self.username}"
 
+
 class UserInformation(models.Model):
     user = models.OneToOneField(
-        User, 
+        User,
         primary_key=True,
         on_delete=models.CASCADE,
         related_name="user_info"
@@ -186,7 +188,7 @@ class UserInformation(models.Model):
         blank=True, null=True,
         max_length=10,
         validators=[PostalCodeValidator]
-        
+
     )
     date_of_birth = models.DateField(
         blank=True, null=True
@@ -200,6 +202,7 @@ class UserInformation(models.Model):
         validators=[HomePhoneNumberValidator],
         blank=True, null=True
     )
+
     class Meta:
         db_table = "accounts_user_information"
 
@@ -232,15 +235,16 @@ class VerificationCodeMixin(models.Model):
     resended = models.PositiveSmallIntegerField(
         default=0
     )
+
     def code_remaining_time(self):
         remainingـtime = (
-                self.created_at + account_settings.EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES
-            ) - timezone.now()
+            self.created_at + account_settings.EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES
+        ) - timezone.now()
         return remainingـtime if remainingـtime > timedelta() else None
-    
+
     def __str__(self):
         return f"{self.user} | {self.code}"
-    
+
     class Meta:
         abstract = True
 
@@ -248,6 +252,7 @@ class VerificationCodeMixin(models.Model):
 class EmailVerificationCode(VerificationCodeMixin):
     class Meta:
         db_table = "accounts_email_verification_code"
+
 
 class PasswordResetCode(VerificationCodeMixin):
     class Meta:
@@ -260,9 +265,9 @@ def generate_verification_code(cls):
     count = 1
     while True:
         code = randint(100000, 999999)
-        if cls.objects.filter(code=code).count()==0 or count > 5:
+        if cls.objects.filter(code=code).count() == 0 or count > 5:
             break
-        count +=1
+        count += 1
     return code
 
 

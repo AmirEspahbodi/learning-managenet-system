@@ -3,10 +3,11 @@ from django.contrib.auth import get_user_model
 
 UserModel = get_user_model()
 
+
 class MyModelBackend(ModelBackend):
     def authenticate(self, request, username=None, email=None, phone_number=None, password=None, **kwargs):
         if not ((username or email or phone_number) and password):
-            return 
+            return
         try:
             if username:
                 user = UserModel.objects.get(username=username)

@@ -38,6 +38,7 @@ IMPORT_STRINGS = {
 
 token_settings = APISettings(defaults=DEFAULTS, import_strings=IMPORT_STRINGS)
 
+
 class CONSTANTS:
     '''
     Constants cannot be changed at runtime

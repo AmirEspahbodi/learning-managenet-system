@@ -32,7 +32,6 @@ class TokenAuthentication(BaseAuthentication):
     - `request.auth` will be an `AuthToken` instance
     '''
 
-
     def authenticate(self, request):
         auth = get_authorization_header(request).split()
         prefix = token_settings.AUTH_HEADER_PREFIX.encode()
@@ -86,9 +85,9 @@ class TokenAuthentication(BaseAuthentication):
         delta = (new_expiry - current_expiry).total_seconds()
         if delta > token_settings.MIN_REFRESH_INTERVAL:
             auth_token.save(update_fields=('expiry',))
-    
+
     def validate_user(self, auth_token):
-        
+
         if not auth_token.user.is_active:
             raise exceptions.AuthenticationFailed(
                 _('User inactive or deleted.'))
@@ -98,14 +97,13 @@ class TokenAuthentication(BaseAuthentication):
         return token_settings.AUTH_HEADER_PREFIX
 
     def token_not_ok(self, auth_token, update_last_use=True):
-        
-        if  auth_token.expiry < timezone.now() or\
-            (auth_token.last_use + token_settings.LAST_USE_TO_EXPIRY) < timezone.now()\
-            :
+
+        if auth_token.expiry < timezone.now() or\
+                (auth_token.last_use + token_settings.LAST_USE_TO_EXPIRY) < timezone.now():
             username = auth_token.user.get_username()
             auth_token.delete()
             token_expired.send(sender=self.__class__,
-                                username=username, source="auth_token")
+                               username=username, source="auth_token")
             return True
         # update time to expire (last_use attr)
         if update_last_use:

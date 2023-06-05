@@ -6,6 +6,7 @@ from courses.models import Course
 
 User = get_user_model()
 
+
 class Student(models.Model):
     user = models.OneToOneField(
         User,
@@ -15,7 +16,7 @@ class Student(models.Model):
         db_index=True
     )
     school = models.CharField(max_length=300, blank=True)
-    degree = models.PositiveSmallIntegerField(default=0 , blank=True)
+    degree = models.PositiveSmallIntegerField(default=0, blank=True)
     field = models.CharField(max_length=200, blank=True)
 
     def __str__(self):
@@ -38,10 +39,10 @@ class StudentEnroll(models.Model):
         Course,
         on_delete=models.CASCADE,
     )
-    
+
     is_student_access = models.BooleanField(default=False)
     is_student_paid_percentage = models.BooleanField(default=False)
-    
+
     def __str__(self):
         return f'student=({self.student.user}) course=({self.course})'
 

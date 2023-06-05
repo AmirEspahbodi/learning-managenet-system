@@ -26,6 +26,7 @@ class Semester(models.Model):
         # validators=[]
     )
     semester = models.PositiveSmallIntegerField(choices=Semseters.choices)
+
     def __str__(self):
         return str(self.semester_id)
 
@@ -41,7 +42,7 @@ class Room(models.Model):
     )
     room_title = models.CharField(max_length=300, unique=True)
     capacity = models.PositiveSmallIntegerField()
-    
+
     def __str__(self):
         return f"{self.room_title}"
 
@@ -74,5 +75,5 @@ class TimeSlot(models.Model):
     def __str__(self):
         return f"{self.room_number} {Days_Of_Week.labels[self.day-1]} {self.start} {self.end}"
 
-    def display(self): 
+    def display(self):
         return f"{self.room_number} {Days_Of_Week.labels[self.day-1]} {self.start} {self.end}"

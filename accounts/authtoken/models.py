@@ -24,11 +24,13 @@ class AuthTokenManager(models.Manager):
             token_key=token[:CONSTANTS.TOKEN_KEY_LENGTH],
             digest=digest,
             user=user)
-        
+
         return instance, token
+
 
 def expiry_set():
     return timezone.now() + token_settings.TOKEN_TTL
+
 
 class AuthToken(models.Model):
 
@@ -36,22 +38,24 @@ class AuthToken(models.Model):
 
     digest = models.CharField(
         max_length=CONSTANTS.DIGEST_LENGTH, primary_key=True)
-    
+
     token_key = models.CharField(
         max_length=CONSTANTS.TOKEN_KEY_LENGTH,
         db_index=True)
-    
+
     user = models.ForeignKey(User, null=False, blank=False,
                              related_name='auth_token_set', on_delete=models.CASCADE)
-    
+
     last_use = models.DateTimeField(auto_now=True)
-    
+
     expiry = models.DateTimeField(default=expiry_set)
 
     def __str__(self):
         return '%s : %s' % (self.digest, self.user)
+
     class Meta:
         db_table = "authtoken_auth_token"
+
 
 class AuthTokenInformation(models.Model):
     authToken = models.OneToOneField(
@@ -72,5 +76,6 @@ class AuthTokenInformation(models.Model):
         default="",
         blank=True,
     )
+
     class Meta:
         db_table = "authtoken_auth_token_information"
