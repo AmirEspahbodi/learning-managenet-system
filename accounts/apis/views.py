@@ -264,7 +264,8 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
                 last_use__gt=(now-token_settings.LAST_USE_TO_EXPIRY)))
             if token.count() >= token_limit_per_user:
                 return Response(
-                    {"non_field_errors": "Maximum amount of tokens allowed per user exceeded."},
+                    {"non_field_errors": [
+                        "Maximum amount of tokens allowed per user exceeded."]},
                     status=status.HTTP_403_FORBIDDEN
                 )
         return None
@@ -282,6 +283,7 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
             "username": self.user.username,
             'first_name': self.user.first_name,
             'last_name': self.user.last_name,
+            'role': self.user.role,
             ** super().get_post_response_data(),
         }
 
@@ -290,8 +292,10 @@ class UserLoginAPIView(APIView, CreateTokenMixin):
         serializer.is_valid(raise_exception=True)
         self.user = serializer.validated_data.get("user")
 
-        self.remove_expired_token_user()
+        if not self.user.is_email_verified():
+            return Response({"non_field_errors": ["EMAIL_VERIFICATION"]}, status=403)
 
+        self.remove_expired_token_user()
         re = self.check_exceeding_the_token_limit()
         if re:
             return re

@@ -55,7 +55,7 @@ class StudentCourseDetailAPIView(GenericAPIView):
         course_id = kwargs.get("course_id")
         course = get_object_or_404(Course, pk=course_id)
         sessions = Session.objects.filter(course=course).order_by('date')
-        return Response(SessionSerializer(sessions, many=True).data, status=status.HTTP_200_OK)
+        return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
 
 
 class StudentSessionDetailAPIView(GenericAPIView):
