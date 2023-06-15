@@ -11,7 +11,7 @@ from rest_framework.generics import GenericAPIView
 from courses.models import Session, Course
 from courses.apis.serializers import SessionSerializer, CourseSerializer
 from .serializers import StudentRegisterSerializer
-from .permissions import IsStudent
+from .permissions import IsStudent, IsRelativeStudentMixin
 from ..models import StudentEnroll
 
 
@@ -42,18 +42,21 @@ class StudentHomeAPIView(GenericAPIView):
             date__lte=day_next_week) & Q(course__in=courses))
         return Response({
             'courses': CourseSerializer(courses,  many=True).data,
-            'sessions': SessionSerializer(week_sessions, many=True).data
+            'sessions': SessionSerializer(week_sessions, many=True).data,
+            "now": now
         },
             status=status.HTTP_200_OK
         )
 
 
-class StudentCourseDetailAPIView(GenericAPIView):
+class StudentCourseDetailAPIView(GenericAPIView, IsRelativeStudentMixin):
     permission_classes = [IsStudent]
 
     def get(self, request, *args, **kwargs):
         course_id = kwargs.get("course_id")
         course = get_object_or_404(Course, pk=course_id)
+        if not self.isRelativeStudent(request, course):
+            return Response({}, status=status.HTTP_403_FORBIDDEN)
         sessions = Session.objects.filter(course=course).order_by('date')
         return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
 

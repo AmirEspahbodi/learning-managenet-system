@@ -34,6 +34,16 @@ class CourseSerializer(ModelSerializer):
                   'group_course_number', 'semester')
 
 
+class CourseSerializerSlim(ModelSerializer):
+    course_title = CourseTitleSerializer()
+    semester = SemesterSerializer()
+
+    class Meta:
+        model = Course
+        fields = ('id', 'course_title',
+                  'group_course_number', 'semester')
+
+
 class CourseDetailSerializer(CourseSerializer):
     course_times = CourseTimeSerializer(many=True, read_only=True)
 
@@ -60,6 +70,7 @@ class SessionSerializer(ModelSerializer):
     time_slot = TimeSlotSerializer(read_only=True)
     assignments = AssignmentSerializer(many=True, read_only=True)
     exams = ExamSerializer(many=True, read_only=True)
+    course = CourseSerializerSlim()
 
     class Meta:
         model = Session
