@@ -37,7 +37,14 @@ class IsRelativeTeacherMixin:
         check teacher is relativve to this course 
         add course object to self
         '''
-        super().check_permissions(request)
+        if not request.user.is_authenticated:
+            raise exceptions.NotAuthenticated()
+
+        if request.user.is_teacher():
+            self.student = request.user.teacher_user
+        else:
+            raise exceptions.PermissionDenied()
+
         course_id = kwargs.get("course_id")
         self.teacher = request.user.teacher_user
         try:

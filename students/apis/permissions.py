@@ -34,12 +34,18 @@ class IsRelativeStudentMixin:
 
     def check_permissions(self, request,  *args, **kwargs):
         '''
-        check teacher is relativve to this course 
+        check teacher is relative to this course 
         add course object to self
         '''
-        super().check_permissions(request)
+        if not request.user.is_authenticated:
+            raise exceptions.NotAuthenticated()
+
+        if request.user.is_student():
+            self.student = request.user.student_user
+        else:
+            raise exceptions.PermissionDenied()
+
         course_id = kwargs.get("course_id")
-        self.student = request.user.student_user
         try:
             self.course = Course.objects.get(id=course_id)
         except ObjectDoesNotExist:
