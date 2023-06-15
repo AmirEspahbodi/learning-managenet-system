@@ -8,7 +8,7 @@ from courses.apis.serializers import SessionSerializer
 from .permissions import IsTeacher, IsRelativeTeacherMixin
 
 
-class TeacherCourseDetailAPIView(GenericAPIView, IsRelativeTeacherMixin):
+class TeacherCourseDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
 
     def get(self, request, *args, **kwargs):
@@ -16,7 +16,7 @@ class TeacherCourseDetailAPIView(GenericAPIView, IsRelativeTeacherMixin):
         return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
 
 
-class TeacherCourseStudentSettingAPIView(GenericAPIView, IsRelativeTeacherMixin):
+class TeacherCourseStudentSettingAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
 
     def get(self, request, *args, **kwargs):
@@ -26,7 +26,7 @@ class TeacherCourseStudentSettingAPIView(GenericAPIView, IsRelativeTeacherMixin)
         pass
 
 
-class TeacherSessionDetailAPIView(GenericAPIView, IsRelativeTeacherMixin):
+class TeacherSessionDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
 
     def get(self, request, *args, **kwargs):

@@ -49,7 +49,7 @@ class StudentHomeAPIView(GenericAPIView):
         )
 
 
-class StudentCourseDetailAPIView(GenericAPIView, IsRelativeStudentMixin):
+class StudentCourseDetailAPIView(IsRelativeStudentMixin, GenericAPIView):
     def get(self, request, *args, **kwargs):
         sessions = Session.objects.filter(course=self.course).order_by('date')
         return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
