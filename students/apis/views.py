@@ -50,14 +50,8 @@ class StudentHomeAPIView(GenericAPIView):
 
 
 class StudentCourseDetailAPIView(GenericAPIView, IsRelativeStudentMixin):
-    permission_classes = [IsStudent]
-
     def get(self, request, *args, **kwargs):
-        course_id = kwargs.get("course_id")
-        course = get_object_or_404(Course, pk=course_id)
-        if not self.isRelativeStudent(request, course):
-            return Response({}, status=status.HTTP_403_FORBIDDEN)
-        sessions = Session.objects.filter(course=course).order_by('date')
+        sessions = Session.objects.filter(course=self.course).order_by('date')
         return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
 
 

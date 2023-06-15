@@ -12,9 +12,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
 
-from accounts.app_settings import account_settings
-from accounts.authtoken.app_settings import token_settings
-from accounts.authtoken.auth import TokenAuthentication
+from ..app_settings import account_settings
+from ..authtoken.app_settings import token_settings
+from ..authtoken.auth import TokenAuthentication
+from .permissions import AllowAnyAuthentication
 from accounts import utils
 
 UserModel = get_user_model()
@@ -99,6 +100,7 @@ class EmailVerificationCodeRequestAPIView(APIView):
     permission_classes = [AllowAny]
     serializer_class = account_settings.SERIALIZERS.EMAIL
     queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
+    authentication_classes = [AllowAnyAuthentication]
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=self.request.data)
@@ -120,6 +122,7 @@ class EmailVerificationCodeRequestAPIView(APIView):
 
 class EmailVerificationConfirmAPIView(GenericAPIView, VerifyVerificationCodeMixin):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAnyAuthentication]
     serializer_class = account_settings.SERIALIZERS.EMAIL_VERIFICATION_CODE
     queryset = account_settings.MODELS.EMAIL_VERIFICATION_CODE.objects.filter()
 
@@ -142,6 +145,7 @@ class EmailVerificationConfirmAPIView(GenericAPIView, VerifyVerificationCodeMixi
 # ********** PASSWORD REST
 class PasswordResetCodeRequestAPIView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAnyAuthentication]
     serializer_class = account_settings.SERIALIZERS.EMAIL
     queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
 
@@ -167,6 +171,7 @@ class PasswordResetCodeRequestAPIView(APIView):
 
 class ResetPasswordVerifyCodeAPIView(GenericAPIView, VerifyVerificationCodeMixin):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAnyAuthentication]
     serializer_class = account_settings.SERIALIZERS.PASWORD_RESET_VERIFY_CODE
     queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
 
@@ -183,6 +188,7 @@ class ResetPasswordVerifyCodeAPIView(GenericAPIView, VerifyVerificationCodeMixin
 
 class ResetPasswordConfirmAPIView(APIView, VerifyVerificationCodeMixin):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAnyAuthentication]
     serializer_class = account_settings.SERIALIZERS.PASSWORD_RESET_CONFIRM
     queryset = account_settings.MODELS.PASSWORD_RESET_CODE.objects.filter()
 
@@ -243,6 +249,7 @@ class PasswordChangeAPIView(APIView, CreateTokenMixin):
 # ********** AUTH
 class UserRegisterAPIView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = [AllowAnyAuthentication]
     serializer_class = account_settings.SERIALIZERS.USER_REGISTER
 
     def post(self, *args, **kwargs):
@@ -254,6 +261,7 @@ class UserRegisterAPIView(APIView):
 
 class UserLoginAPIView(APIView, CreateTokenMixin):
     permission_classes = (AllowAny,)
+    authentication_classes = [AllowAnyAuthentication]
     serializer_class = account_settings.SERIALIZERS.USER_LOGIN
 
     def check_exceeding_the_token_limit(self):
@@ -338,15 +346,16 @@ class VerifyToken(APIView):
 
 class AuthTokenVarifyApiView(APIView):
 
+    permission_classes = (AllowAny,)
+    authentication_classes = [AllowAnyAuthentication]
+    serializer_class = token_settings.SERIALIZERS.AUTH_TOKEN
+
     def get_expiry_datetime_format(self):
         return token_settings.EXPIRY_DATETIME_FORMAT
 
     def format_expiry_datetime(self, expiry):
         datetime_format = self.get_expiry_datetime_format()
         return DateTimeField(format=datetime_format).to_representation(expiry)
-
-    permission_classes = (AllowAny,)
-    serializer_class = token_settings.SERIALIZERS.AUTH_TOKEN
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)

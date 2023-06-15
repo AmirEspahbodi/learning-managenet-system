@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import exceptions
 from accounts.apis.permissions import IsEmailVerified
-from ..models import StudentEnroll
+from ..models import StudentEnroll, Course
 
 
 class IsStudent(IsEmailVerified):
@@ -12,14 +13,40 @@ class IsStudent(IsEmailVerified):
 
 
 class IsRelativeStudentMixin:
-    def isRelativeStudent(self, request, course):
-        student = request.user.student_user
-        try:
-            studentCourseEnroll = StudentEnroll.objects.get(
-                student=student, course=course)
-        except ObjectDoesNotExist:
-            return False
+    def initial(self, request, *args, **kwargs):
+        """
+        Runs anything that needs to occur prior to calling the method handler.
+        """
+        self.format_kwarg = self.get_format_suffix(**kwargs)
 
-        if studentCourseEnroll.student == student:
-            return True
-        return False
+        # Perform content negotiation and store the accepted info on the request
+        neg = self.perform_content_negotiation(request)
+        request.accepted_renderer, request.accepted_media_type = neg
+
+        # Determine the API version, if versioning is in use.
+        version, scheme = self.determine_version(request, *args, **kwargs)
+        request.version, request.versioning_scheme = version, scheme
+
+        # Ensure that the incoming request is permitted
+        self.perform_authentication(request)
+        self.check_permissions(request, *args, **kwargs)
+        self.check_throttles(request)
+
+    def check_permissions(self, request,  *args, **kwargs):
+        '''
+        check teacher is relativve to this course 
+        add course object to self
+        '''
+        super().check_permissions(request)
+        course_id = kwargs.get("course_id")
+        self.student = request.user.student_user
+        try:
+            self.course = Course.objects.get(id=course_id)
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+
+        try:
+            self.studentCourseEnroll = StudentEnroll.objects.get(
+                student=self.student, course=self.course)
+        except ObjectDoesNotExist:
+            raise exceptions.PermissionDenied()

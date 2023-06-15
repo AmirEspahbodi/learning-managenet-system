@@ -12,16 +12,25 @@ class TeacherCourseDetailAPIView(GenericAPIView, IsRelativeTeacherMixin):
     permission_classes = [IsTeacher]
 
     def get(self, request, *args, **kwargs):
-
-        course_id = kwargs.get("course_id")
-        course = get_object_or_404(Course, pk=course_id)
-
-        if not self.isRelativeTeacer(request, course):
-            return Response({"message": "forbiden"}, status=status.HTTP_403_FORBIDDEN)
-
-        sessions = Session.objects.filter(course=course).order_by('date')
+        sessions = Session.objects.filter(course=self.course).order_by('date')
         return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
 
 
-class TeacherCourseStudentsAPIView(GenericAPIView, IsRelativeTeacherMixin):
+class TeacherCourseStudentSettingAPIView(GenericAPIView, IsRelativeTeacherMixin):
     permission_classes = [IsTeacher]
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+
+class TeacherSessionDetailAPIView(GenericAPIView, IsRelativeTeacherMixin):
+    permission_classes = [IsTeacher]
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def post(self, request, *args, **kwargs):
+        pass

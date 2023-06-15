@@ -1,3 +1,4 @@
+from rest_framework.authentication import BaseAuthentication
 from rest_framework.permissions import BasePermission
 
 
@@ -20,3 +21,8 @@ class IsEmailOrPhoneVerified(BasePermission):
         if request.user and request.user.is_authenticated:
             return request.user.is_email_verified() or request.user.is_phone_number_verified()
         return False
+
+
+class AllowAnyAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        return (None, None)
