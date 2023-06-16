@@ -1,9 +1,9 @@
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-from rest_framework import exceptions, serializers
-from accounts.validators import validate_password, name_validator
+from rest_framework import serializers
 from students.models import Student
-from accounts.apis.serializers import UserRegisterSerializer
+from accounts.apis.serializers import UserRegisterSerializer, UserSerializerNames
+from ..models import StudentEnroll
 
 User = get_user_model()
 
@@ -29,3 +29,20 @@ class StudentRegisterSerializer(serializers.ModelSerializer):
         )
         student = Student.objects.create(user=user, **validated_data)
         return student
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    user = UserSerializerNames()
+
+    class Meta:
+        model = Student
+        fields = ('user', 'school', 'degree', 'field')
+
+
+class StudentEnrollSerializer(serializers.ModelSerializer):
+    student = StudentSerializer()
+
+    class Meta:
+        model = StudentEnroll
+        fields = ('student', 'course', 'is_student_access',
+                  'is_student_paid_percentage')

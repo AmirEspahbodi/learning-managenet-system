@@ -216,3 +216,9 @@ class UserSerializerTeacherSearch(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ('first_name', 'last_name')
+
+
+class UserSerializerNames(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ('id', 'first_name', 'last_name')

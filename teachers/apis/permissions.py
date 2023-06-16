@@ -45,11 +45,12 @@ class IsRelativeTeacherMixin:
         else:
             raise exceptions.PermissionDenied()
 
-        course_id = kwargs.get("course_id")
+        self.course_id = kwargs.get("course_id")
         self.teacher = request.user.teacher_user
         try:
-            self.course = Course.objects.get(id=course_id)
+            self.course = Course.objects.get(id=self.course_id)
         except ObjectDoesNotExist:
             raise exceptions.NotFound()
+
         if self.course.teacher != self.teacher:
             raise exceptions.PermissionDenied()
