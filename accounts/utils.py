@@ -2,22 +2,23 @@ from ipware import get_client_ip
 from user_agents import parse
 import sys
 import json
-from hashlib import md5
+
 if sys.version_info[0] == 3:
     text_type = str
 else:
     text_type = unicode
-# from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.sites.models import Site
-# from django.utils.http import urlsafe_base64_encode
-# from django.utils.encoding import force_bytes
 from django.conf import settings
 from templated_mail.mail import BaseEmailMessage
-# from django.core.exceptions import ObjectDoesNotExist
-from accounts.models import generate_verification_code
 from accounts.app_settings import account_settings
+from accounts.models import EmailVerificationCode, PasswordResetCode
 from rest_framework.exceptions import ValidationError
 
+
+# from django.core.exceptions import ObjectDoesNotExist
+# from django.utils.http import urlsafe_base64_encode
+# from django.contrib.auth.tokens import PasswordResetTokenGenerator
+# from django.utils.encoding import force_bytes
 # V0: token web base (no db)
 # class AcconutActivationToken(PasswordResetTokenGenerator):
 #     def _make_hash_value(self, user, timestamp: int):
@@ -39,13 +40,13 @@ from rest_framework.exceptions import ValidationError
 
 
 class ActivationEmailV1(BaseEmailMessage):
-    template_name = 'accounts/email/email_activationsV1.html'
+    template_name = "accounts/email/email_activationsV1.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['web_server_port'] = 8000 if settings.DEBUG else 80
-        context['site_name'] = Site.objects.get_current().name
-        context['domain'] = Site.objects.get_current().domain
+        context["web_server_port"] = 8000 if settings.DEBUG else 80
+        context["site_name"] = Site.objects.get_current().name
+        context["domain"] = Site.objects.get_current().domain
         return context
 
 
@@ -54,18 +55,18 @@ class PasswordResetEmailV1(BaseEmailMessage):
 
     def get_context_data(self):
         context = super().get_context_data()
-        context['web_server_port'] = 8000 if settings.DEBUG else 80
-        context['site_name'] = Site.objects.get_current().name
-        context['domain'] = Site.objects.get_current().domain
+        context["web_server_port"] = 8000 if settings.DEBUG else 80
+        context["site_name"] = Site.objects.get_current().name
+        context["domain"] = Site.objects.get_current().domain
         return context
 
 
 class ActivationEmailComplatedEmail(BaseEmailMessage):
-    template_name = 'accounts/email/email_activations_complated.html'
+    template_name = "accounts/email/email_activations_complated.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['site_name'] = Site.objects.get_current().name
+        context["site_name"] = Site.objects.get_current().name
         return context
 
 
@@ -74,7 +75,7 @@ class PasswordResetComplatedEmail(BaseEmailMessage):
 
     def get_context_data(self):
         context = super().get_context_data()
-        context['site_name'] = Site.objects.get_current().name
+        context["site_name"] = Site.objects.get_current().name
         return context
 
 
@@ -82,30 +83,25 @@ def setUp_user_password_resetV1(user):
     new_password_token = account_settings.MODELS.PASSWORD_RESET_CODE(user=user)
     new_password_token.save()
     PasswordResetEmailV1(
-        context={
-            'user': user,
-            'token': new_password_token.token
-        }
+        context={"user": user, "token": new_password_token.token}
     ).send(to=[user.email])
 
 
 def setUp_user_email_verification_complated(user):
-    ActivationEmailComplatedEmail(
-    ).send(to=[user.email])
+    ActivationEmailComplatedEmail().send(to=[user.email])
 
 
 def setUp_user_password_reset_complated(user):
-    PasswordResetComplatedEmail(
-    ).send(to=[user.email])
+    PasswordResetComplatedEmail().send(to=[user.email])
 
 
 # V2: api base (Six digit code)
 class ActivationEmail(BaseEmailMessage):
-    template_name = 'accounts/email/email_activations.html'
+    template_name = "accounts/email/email_activations.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['site_name'] = Site.objects.get_current().name
+        context["site_name"] = Site.objects.get_current().name
         return context
 
 
@@ -114,22 +110,21 @@ class PasswordResetEmail(BaseEmailMessage):
 
     def get_context_data(self):
         context = super().get_context_data()
-        context['site_name'] = Site.objects.get_current().name
+        context["site_name"] = Site.objects.get_current().name
         return context
 
 
 def get_user_agent(request):
-    if not hasattr(request, 'META'):
-        return ''
-    ua_string = request.META['HTTP_USER_AGENT']
+    if not hasattr(request, "META"):
+        return ""
+    ua_string = request.META["HTTP_USER_AGENT"]
     if not isinstance(ua_string, text_type):
-        ua_string = ua_string.decode('utf-8', 'ignore')
+        ua_string = ua_string.decode("utf-8", "ignore")
     user_agent = parse(ua_string)
     user_agent_data = {
         "get_browser": str(user_agent.get_browser()),
         "get_device": str(user_agent.get_device()),
         "get_os": str(user_agent.get_os()),
-
         "is_bot": str(user_agent.is_bot),
         "is_email_client": str(user_agent.is_email_client),
         "is_mobile": str(user_agent.is_mobile),
@@ -153,19 +148,34 @@ def compare_user_agents_data(codeInstance, request):
     Checking whether the request IP address or user agent data
     is different from the what ever stored in the database for that code
     """
-    current_client_ip, current_is_routable, current_user_agent_data = get_ip_and_user_agent(
-        request) if request else (None, None, None)
+    current_client_ip, current_is_routable, current_user_agent_data = (
+        get_ip_and_user_agent(request) if request else (None, None, None)
+    )
 
     storred_client_ip, storred_user_agent_data = (
-        codeInstance.ip_address, json.loads(codeInstance.user_agent.replace("\'", "\"")))
+        codeInstance.ip_address,
+        json.loads(codeInstance.user_agent.replace("'", '"')),
+    )
 
-    if not (storred_client_ip == current_client_ip or storred_client_ip == current_is_routable):
-        return {"detail": "do not change your ip address during process", "status_code": 403}
+    if not (
+        storred_client_ip == current_client_ip
+        or storred_client_ip == current_is_routable
+    ):
+        return {
+            "detail": "do not change your ip address during process",
+            "status_code": 403,
+        }
 
-    if current_user_agent_data["get_browser"] != storred_user_agent_data["get_browser"] or \
-            current_user_agent_data["get_device"] != storred_user_agent_data["get_device"] or \
-            current_user_agent_data["get_os"] != storred_user_agent_data["get_os"]:
-        return {"detail": "do not change your browser during process", "status_code": 403}
+    if (
+        current_user_agent_data["get_browser"] != storred_user_agent_data["get_browser"]
+        or current_user_agent_data["get_device"]
+        != storred_user_agent_data["get_device"]
+        or current_user_agent_data["get_os"] != storred_user_agent_data["get_os"]
+    ):
+        return {
+            "detail": "do not change your browser during process",
+            "status_code": 403,
+        }
 
     return {"detail": "OK", "status_code": 200}
 
@@ -176,15 +186,17 @@ def generate_new_verification_code(VerificationCode, user, request=None):
     store code and these information in datebase and send code to user via email addres.
     return proccess result.
     """
-    client_ip, is_routable, user_agent_data = get_ip_and_user_agent(
-        request) if request else (None, None, None)
-    code = generate_verification_code(VerificationCode)
+    client_ip, is_routable, user_agent_data = (
+        get_ip_and_user_agent(request) if request else (None, None, None)
+    )
+    code = VerificationCode.generate_verification_code()
     if code == 0:
         """
         If the function fails to generate a six-digit code, it means that most of the digits in the range are reserved
         try to remove expire codes and return one of the deleted code
         """
         from accounts.models import delete_expired_codes
+
         code = delete_expired_codes(VerificationCode)
         """
         if there is no expired code we must tell user try again later!
@@ -192,22 +204,27 @@ def generate_new_verification_code(VerificationCode, user, request=None):
         if code == 0:
             return {
                 "detail": "most of the codes are reserved! Try in a few minutes later",
-                "status_code": 409
+                "status_code": 409,
             }
 
     verificationCode = VerificationCode(
         user=user,
         code=code,
-        ip_address=client_ip if client_ip else is_routable if is_routable else "private",
-        user_agent=user_agent_data if user_agent_data else '{}'
+        ip_address=client_ip
+        if client_ip
+        else is_routable
+        if is_routable
+        else "private",
+        user_agent=user_agent_data if user_agent_data else "{}",
     )
     verificationCode.save()
     return verificationCode
 
 
 def check_existing_user_verifivation_codes(VerificationCode, user):
-    verificationCode = VerificationCode.objects.filter(
-        user=user).order_by('-created_at')
+    verificationCode = VerificationCode.objects.filter(user=user).order_by(
+        "-created_at"
+    )
     if verificationCode.count() > 0:
         currentVerificationCode = None
         for code in verificationCode:
@@ -217,7 +234,10 @@ def check_existing_user_verifivation_codes(VerificationCode, user):
                 code.delete()
         remain_time = currentVerificationCode.code_remaining_time()
         if remain_time:
-            if currentVerificationCode.resended < account_settings.VERIFICATION_CODE_RESEND_LIMIT:
+            if (
+                currentVerificationCode.resended
+                < account_settings.VERIFICATION_CODE_RESEND_LIMIT
+            ):
                 currentVerificationCode.resended = currentVerificationCode.resended + 1
                 currentVerificationCode.save()
                 return currentVerificationCode
@@ -226,9 +246,9 @@ def check_existing_user_verifivation_codes(VerificationCode, user):
                     {
                         "detail": "too much requests!",
                         "time": {
-                            'hours': int(remain_time.seconds/3600),
-                            'minutes': int((remain_time.seconds/60) % 60),
-                            'seconds': int(remain_time.seconds % 60)
+                            "hours": int(remain_time.seconds / 3600),
+                            "minutes": int((remain_time.seconds / 60) % 60),
+                            "seconds": int(remain_time.seconds % 60),
                         },
                     },
                     429,  # HTTP_429_TOO_MANY_REQUESTS
@@ -252,36 +272,35 @@ def setUp_user_verification_code(VerificationCode, Email, user, request):
     if isinstance(result, tuple):
         return result
     if result is None:
-        result = generate_new_verification_code(
-            VerificationCode, user, request)
+        result = generate_new_verification_code(VerificationCode, user, request)
 
-    Email(
-        context={
-            'user': user,
-            'code': result.code
-        }
-    ).send(to=[user.email])
+    Email(context={"user": user, "code": result.code}).send(to=[user.email])
     remain_time = result.code_remaining_time()
     print(remain_time)
-    return ({
+    return (
+        {
             "detail": "The code has been sent to your email address",
             "time": {
-                'hours': int(remain_time.seconds/3600),
-                'minutes': int((remain_time.seconds/60) % 60),
-                'seconds': int(remain_time.seconds % 60)
+                "hours": int(remain_time.seconds / 3600),
+                "minutes": int((remain_time.seconds / 60) % 60),
+                "seconds": int(remain_time.seconds % 60),
             },
-            },
-            200
-            )
+        },
+        200,
+    )
 
 
 def setUp_user_email_verification_code(user, request=None):
     return setUp_user_verification_code(
-        account_settings.MODELS.EMAIL_VERIFICATION_CODE,
-        ActivationEmail, user, request)
+        EmailVerificationCode, ActivationEmail, user, request
+    )
 
 
 def setUp_user_password_reset_verification_code(user, request=None):
     return setUp_user_verification_code(
-        account_settings.MODELS.PASSWORD_RESET_CODE,
-        PasswordResetEmail, user, request)
+        PasswordResetCode, PasswordResetEmail, user, request
+    )
+
+
+def username_generator():
+    pass

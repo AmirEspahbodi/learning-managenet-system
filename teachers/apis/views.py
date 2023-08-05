@@ -11,7 +11,7 @@ from courses.models import Session, Course
 from courses.apis.serializers import SessionSerializer, CourseSerializer
 from students.models import StudentEnroll
 from students.apis.serializers import StudentEnrollSerializer
-from .permissions import IsTeacher, IsRelativeTeacherMixin
+from courses.permissions import IsTeacher, IsRelativeTeacherMixin
 from .serialisers import StudentAccessSerializer
 from students.models import Student
 

@@ -11,7 +11,7 @@ from rest_framework.generics import GenericAPIView
 from courses.models import Session, Course
 from courses.apis.serializers import SessionSerializer, CourseSerializer
 from .serializers import StudentRegisterSerializer
-from .permissions import IsStudent, IsRelativeStudentMixin
+from courses.permissions import IsStudent, IsRelativeStudentMixin
 from ..models import StudentEnroll
 
 

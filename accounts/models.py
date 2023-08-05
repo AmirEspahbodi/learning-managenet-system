@@ -1,29 +1,40 @@
+import random
+import string
 from datetime import timedelta
 from random import randint
 from django.db import models
+from django.apps import apps
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, UserManager
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from accounts.app_settings import account_settings
 from accounts.validators import (
-    UnicodeUsernameValidator, NationalCodeValidator,
-    HomePhoneNumberValidator, PostalCodeValidator)
+    UnicodeUsernameValidator,
+    NationalCodeValidator,
+    HomePhoneNumberValidator,
+    PostalCodeValidator,
+)
 from phonenumber_field import modelfields
 
 
-# Create your models here.
+def create_username():
+    return "".join(
+        random.choice(string.ascii_letters + "0123456789") for i in range(15)
+    )
+
 
 class Roles(models.IntegerChoices):
-    NOT_DEFINED = 1, 'not defined'
-    STUDENT = 2, 'student'
-    TEACHER = 3, 'teacher'
-    SUPERVISOR = 5, 'supervisor'
-    ADMIN = 7, 'admin'
-    TEACHER_SUPERVISOR = TEACHER[0]*SUPERVISOR[0], 'teacher and supervisor'
-    TEACHER_ADMIN = TEACHER[0]*ADMIN[0], 'teacher and admin'
+    NOT_DEFINED = 1, "not defined"
+    STUDENT = 2, "student"
+    TEACHER = 3, "teacher"
+    SUPERVISOR = 5, "supervisor"
+    ADMIN = 7, "admin"
+    TEACHER_SUPERVISOR = TEACHER[0] * SUPERVISOR[0], "teacher and supervisor"
+    TEACHER_ADMIN = TEACHER[0] * ADMIN[0], "teacher and admin"
 
 
-class VERIFICATION_STATUS(models.IntegerChoices):
+class VerificationStatus(models.IntegerChoices):
     NONE = 1, _("None of them have been verified.")
     PHONE = 2, _("The mobile number is verified.")
     EMAIL = 3, _("Email address is verified.")
@@ -31,10 +42,27 @@ class VERIFICATION_STATUS(models.IntegerChoices):
 
 
 class MyUserManager(UserManager):
-    def create_user(self, username, email=None, password=None, **extra_fields):
-        if extra_fields.get('role') is None:
+    def _create_user(self, username, email, password, **extra_fields):
+        """
+        Create and save a user with the given username, email, and password.
+        """
+        if username:
+            GlobalUserModel = apps.get_model(
+                self.model._meta.app_label, self.model._meta.object_name
+            )
+            username = GlobalUserModel.normalize_username(username)
+        else:
+            username = create_username()
+        email = self.normalize_email(email)
+        user = self.model(username=username, email=email, **extra_fields)
+        user.password = make_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username=None, email=None, password=None, **extra_fields):
+        if extra_fields.get("role") is None:
             extra_fields.setdefault("role", Roles.NOT_DEFINED)
-        if extra_fields.get('role') % Roles.ADMIN.numerator == 0:
+        if extra_fields.get("role") % Roles.ADMIN.numerator == 0:
             raise ValueError("You are not allowed.")
         extra_fields.setdefault("is_superuser", False)
         return self._create_user(username, email, password, **extra_fields)
@@ -56,32 +84,24 @@ class User(AbstractBaseUser, PermissionsMixin):
         _("email address"),
         unique=True,
         error_messages={
-            "unique": _(
-                "A user with that email already exists."
-            ),
+            "unique": _("A user with that email already exists."),
         },
     )
     username = models.CharField(
         _("username"),
         max_length=150,
         unique=True,
-        help_text=_(
-            "Required. 150 characters or fewer. Letters, digits and _ only."
-        ),
+        help_text=_("Required. 150 characters or fewer. Letters, digits and _ only."),
         validators=[UnicodeUsernameValidator()],
         error_messages={
-            "unique": _(
-                "A user with that username already exists."
-            ),
+            "unique": _("A user with that username already exists."),
         },
     )
     phone_number = modelfields.PhoneNumberField(
         unique=True,
         error_messages={
-            "unique": _(
-                "A user with that phone number already exists."
-            ),
-        }
+            "unique": _("A user with that phone number already exists."),
+        },
     )
     is_active = models.BooleanField(
         _("active"),
@@ -92,19 +112,17 @@ class User(AbstractBaseUser, PermissionsMixin):
         ),
     )
     role = models.PositiveSmallIntegerField(
-        choices=Roles.choices,
-        default=Roles.NOT_DEFINED
+        choices=Roles.choices, default=Roles.NOT_DEFINED
     )
     verification_status = models.PositiveSmallIntegerField(
-        choices=VERIFICATION_STATUS.choices,
-        default=VERIFICATION_STATUS.NONE
+        choices=VerificationStatus.choices, default=VerificationStatus.NONE
     )
 
     objects = MyUserManager()
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "username"
-    REQUIRED_FIELDS = ["email", 'phone_number']
+    REQUIRED_FIELDS = ["email", "phone_number"]
 
     def clean(self):
         super().clean()
@@ -125,10 +143,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Send an email to this user."""
 
     def is_email_verified(self):
-        return self.verification_status % VERIFICATION_STATUS.EMAIL == 0
+        return self.verification_status % VerificationStatus.EMAIL == 0
 
     def is_phone_number_verified(self):
-        return self.verification_status % VERIFICATION_STATUS.PHONE == 0
+        return self.verification_status % VerificationStatus.PHONE == 0
 
     @property
     def is_staff(self):
@@ -154,53 +172,23 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class UserInformation(models.Model):
     user = models.OneToOneField(
-        User,
-        primary_key=True,
-        on_delete=models.CASCADE,
-        related_name="user_info"
+        User, primary_key=True, on_delete=models.CASCADE, related_name="user_info"
     )
     national_code = models.CharField(
-        max_length=10,
-        validators=[NationalCodeValidator],
-        blank=True, null=True
+        max_length=10, validators=[NationalCodeValidator], blank=True, null=True
     )
-    secondary_phone_number = modelfields.PhoneNumberField(
-        blank=True,
-        null=True
-    )
-    date_joined = models.DateTimeField(
-        _("date joined"),
-        default=timezone.now
-    )
-    province = models.CharField(
-        max_length=100,
-        blank=True, null=True
-    )
-    city = models.CharField(
-        max_length=100,
-        blank=True, null=True
-    )
-    address = models.CharField(
-        max_length=250,
-        blank=True, null=True
-    )
+    secondary_phone_number = modelfields.PhoneNumberField(blank=True, null=True)
+    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+    province = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    address = models.CharField(max_length=250, blank=True, null=True)
     postal_code = models.CharField(
-        blank=True, null=True,
-        max_length=10,
-        validators=[PostalCodeValidator]
-
+        blank=True, null=True, max_length=20, validators=[PostalCodeValidator]
     )
-    date_of_birth = models.DateField(
-        blank=True, null=True
-    )
-    father_name = models.CharField(
-        max_length=100,
-        blank=True, null=True
-    )
+    date_of_birth = models.DateField(blank=True, null=True)
+    father_name = models.CharField(max_length=100, blank=True, null=True)
     home_phone_number = models.CharField(
-        max_length=11,
-        validators=[HomePhoneNumberValidator],
-        blank=True, null=True
+        max_length=11, validators=[HomePhoneNumberValidator], blank=True, null=True
     )
 
     class Meta:
@@ -210,15 +198,15 @@ class UserInformation(models.Model):
 class VerificationCodeMixin(models.Model):
     code = models.CharField(
         unique=True,
-        max_length=6
+        max_length=6,
+        db_index=True,
     )
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
     created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("When was this token generated")
+        auto_now_add=True, verbose_name=_("When was this token generated")
     )
     ip_address = models.GenericIPAddressField(
         _("The IP address of this session"),
@@ -233,17 +221,30 @@ class VerificationCodeMixin(models.Model):
         blank=True,
     )
     resended = models.PositiveSmallIntegerField(
-        default=0
+        default=0,
     )
 
     def code_remaining_time(self):
         remainingـtime = (
-            self.created_at + account_settings.EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES
+            self.created_at
+            + account_settings.EMAIL_CONFIRMARION_AND_PASSWORD_RESSET_TOKEN_EXPIRE_MINUTES
         ) - timezone.now()
         return remainingـtime if remainingـtime > timedelta() else None
 
     def __str__(self):
         return f"{self.user} | {self.code}"
+
+    @classmethod
+    def generate_verification_code(cls):
+        """generate code where does not exist in this table (try at last 5 times)"""
+        code = 0
+        count = 1
+        while True:
+            code = randint(100000, 999999)
+            if cls.objects.filter(code=code).count() == 0 or count > 5:
+                break
+            count += 1
+        return code
 
     class Meta:
         abstract = True
@@ -257,18 +258,6 @@ class EmailVerificationCode(VerificationCodeMixin):
 class PasswordResetCode(VerificationCodeMixin):
     class Meta:
         db_table = "accounts_password_reset_code"
-
-
-def generate_verification_code(cls):
-    """ generate code where does not exist in this table (try at last 5 times)"""
-    code = 0
-    count = 1
-    while True:
-        code = randint(100000, 999999)
-        if cls.objects.filter(code=code).count() == 0 or count > 5:
-            break
-        count += 1
-    return code
 
 
 def delete_expired_codes(CodeClass):

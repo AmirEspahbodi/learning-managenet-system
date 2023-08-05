@@ -2,14 +2,14 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from students.models import Student
-from accounts.apis.serializers import UserRegisterSerializer, UserSerializerNames
+from accounts.apis.serializers import UserRegisterL1Serializer, UserSerializerNames
 from ..models import StudentEnroll
 
 User = get_user_model()
 
 
 class StudentRegisterSerializer(serializers.ModelSerializer):
-    user = UserRegisterSerializer(
+    user = UserRegisterL1Serializer(
         many=False
     )
 

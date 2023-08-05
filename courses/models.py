@@ -1,8 +1,17 @@
 from django.db import models
-from teachers.models import Teacher
 from jalali_date import date2jalali
 from trs.models import TimeSlot, Semester
+from django.contrib.auth import get_user_model
 # Create your models here.
+
+User = get_user_model()
+
+
+class MemberShipRoles(models.IntegerChoices):
+    TEACHER = 3, 'teacher'
+    INSTRUCTOR = 5, "instructor"
+    TEACHING_ASSISTANT = 7, 'teaching assistant'
+    STUDENT = 2, 'student'
 
 
 class CourseTitle(models.Model):
@@ -36,8 +45,6 @@ class Course(models.Model):
     course_title = models.ForeignKey(
         CourseTitle, on_delete=models.PROTECT, related_name="courses")
     semester = models.ForeignKey(Semester, on_delete=models.PROTECT)
-    teacher = models.ForeignKey(
-        Teacher, on_delete=models.DO_NOTHING, related_name="courses")
     start_date = models.DateField(help_text='The date of the first session')
     end_date = models.DateField(help_text='The date of the last session')
     tuition = models.DecimalField(
@@ -72,6 +79,15 @@ class Course(models.Model):
 
     def __unicode__(self):
         return self.__str__()
+
+
+class MemberShip(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    role = models.PositiveSmallIntegerField(choices=MemberShipRoles.choices)
+
+    def __str__(self):
+        return
 
 
 class CourseTime(models.Model):

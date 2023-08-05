@@ -15,15 +15,9 @@ class TeacherEducationInline(admin.TabularInline):
     extra = 1
 
 
-class TeacherCoursesInline(admin.TabularInline):
-    model = Course
-    extra = 1
-
-
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
     inlines = [
-        TeacherCoursesInline,
         TeacherEducationInline,
         TeacherPublishedInline,
     ]

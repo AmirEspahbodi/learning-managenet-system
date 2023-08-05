@@ -7,8 +7,14 @@ from django.core.exceptions import ValidationError as djangoValidationError
 from rest_framework import exceptions, serializers
 from rest_framework.exceptions import ValidationError
 from phonenumber_field.validators import validate_international_phonenumber
-from accounts.validators import validate_password, validate_6_digit_code, UnicodeUsernameValidator, name_validator
+from accounts.validators import (
+    validate_password,
+    validate_6_digit_code,
+    UnicodeUsernameValidator,
+    name_validator,
+)
 from accounts.app_settings import account_settings
+from accounts.models import UserInformation, PasswordResetCode
 
 UserModel = get_user_model()
 
@@ -27,31 +33,31 @@ class PasswordResetVerifyCodeSerializer(serializers.Serializer):
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     code = serializers.IntegerField(required=True)
-    new_password1 = serializers.CharField(
-        required=True, validators=[validate_password])
+    new_password1 = serializers.CharField(required=True, validators=[validate_password])
     new_password2 = serializers.CharField(required=True)
     set_password_form_class = SetPasswordForm
 
     def validate(self, attrs):
         try:
-            resetCode = account_settings.MODELS.PASSWORD_RESET_CODE.objects.get(
-                code=attrs['code'])
+            resetCode = PasswordResetCode.objects.get(code=attrs["code"])
         except ObjectDoesNotExist:
-            raise ValidationError('wrong code')
+            raise ValidationError("wrong code")
         self.set_password_form = self.set_password_form_class(
-            user=resetCode.user, data=attrs,
+            user=resetCode.user,
+            data=attrs,
         )
 
         if not self.set_password_form.is_valid():
             raise serializers.ValidationError(self.set_password_form.errors)
-        attrs['verificationCode'] = resetCode
+        attrs["verificationCode"] = resetCode
         return attrs
 
 
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField(max_length=128)
     new_password1 = serializers.CharField(
-        max_length=128, validators=[validate_password])
+        max_length=128, validators=[validate_password]
+    )
     new_password2 = serializers.CharField(max_length=128)
 
     set_password_form_class = SetPasswordForm
@@ -62,10 +68,10 @@ class PasswordChangeSerializer(serializers.Serializer):
         super().__init__(*args, **kwargs)
 
         if not self.old_password_field_enabled:
-            self.fields.pop('old_password')
+            self.fields.pop("old_password")
 
-        self.request = self.context.get('request')
-        self.user = getattr(self.request, 'user', None)
+        self.request = self.context.get("request")
+        self.user = getattr(self.request, "user", None)
 
     def validate_old_password(self, value):
         invalid_password_conditions = (
@@ -76,13 +82,15 @@ class PasswordChangeSerializer(serializers.Serializer):
 
         if all(invalid_password_conditions):
             err_msg = _(
-                'Your old password was entered incorrectly. Please enter it again.')
+                "Your old password was entered incorrectly. Please enter it again."
+            )
             raise serializers.ValidationError(err_msg)
         return value
 
     def validate(self, attrs):
         self.set_password_form = self.set_password_form_class(
-            user=self.user, data=attrs,
+            user=self.user,
+            data=attrs,
         )
 
         if not self.set_password_form.is_valid():
@@ -90,78 +98,130 @@ class PasswordChangeSerializer(serializers.Serializer):
         return attrs
 
 
-class UserRegisterSerializer(serializers.ModelSerializer):
+class UserRegisterL1Serializer(serializers.ModelSerializer):
     password1 = serializers.CharField(
-        write_only=True, required=True, validators=[validate_password])
+        write_only=True, required=True, validators=[validate_password]
+    )
     password2 = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(required=False)
 
     class Meta:
         model = UserModel
-        fields = ('first_name', 'last_name', 'email', 'username',
-                  'phone_number', 'password1', 'password2')
+        fields = (
+            "first_name",
+            "last_name",
+            "email",
+            "username",
+            "phone_number",
+            "role",
+            "password1",
+            "password2",
+        )
 
     def validate(self, data, *args, **kwargs):
-        if data['password1'] != data['password2']:
+        if data["password1"] != data["password2"]:
             raise serializers.ValidationError(
-                {'password': "The two password fields didn't match."}
+                {"password": "The two password fields didn't match."}
             )
 
         # use default django password validator (user information similarity) too
-        first_name_error = name_validator(
-            data['first_name'], return_error=True)
-        last_name_error = name_validator(data['last_name'], return_error=True)
-        name_errors = {}
-        name_errors.update({'first_name': first_name_error}
-                           if first_name_error else {})
-        name_errors.update({'last_name': last_name_error}
-                           if last_name_error else {})
-        if name_errors:
+        first_name_error = name_validator(data["first_name"], return_error=True)
+        last_name_error = name_validator(data["last_name"], return_error=True)
+        if first_name_error or last_name_error:
             raise serializers.ValidationError(
-                name_errors
+                {
+                    **({"first_name": first_name_error} if first_name_error else {}),
+                    **({"last_name": last_name_error} if last_name_error else {}),
+                }
             )
         return data
 
     def create(self, validated_data):
         user = UserModel.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password1'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            phone_number=validated_data['phone_number'],
+            email=validated_data["email"],
+            password=validated_data["password1"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
+            phone_number=validated_data["phone_number"],
+            username=validated_data.get("username"),
+            role=validated_data.get("role"),
         )
         return user
 
 
+class UserRegisterL2Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserInformation
+        fields = (
+            "user",
+            "national_code",
+            "secondary_phone_number",
+            "province",
+            "city",
+            "address",
+            "postal_code",
+            "date_of_birth",
+            "father_name",
+            "home_phone_number",
+        )
+
+    def validate(self, data, *args, **kwargs):
+        print("\n\n")
+        print("111" * 45)
+        print(data)
+        print("\n\n")
+        father_name_error = name_validator(data.get("father_name"), return_error=True)
+        if father_name_error:
+            raise serializers.ValidationError(father_name_error)
+        return data
+
+    def create(self, validated_data):
+        userInformation = UserInformation.objects.create(
+            user_id=validated_data.get("user_id"),
+            national_code=validated_data.get("national_code"),
+            secondary_phone_number=validated_data.get("secondary_phone_number"),
+            province=validated_data.get("province"),
+            city=validated_data.get("city"),
+            address=validated_data.get("address"),
+            postal_code=validated_data.get("postal_code"),
+            date_of_birth=validated_data.get("date_of_birth"),
+            father_name=validated_data.get("father_name"),
+            home_phone_number=validated_data.get("home_phone_number"),
+        )
+        return userInformation
+
+
 class UserLoginSerializer(serializers.Serializer):
-    login_field = serializers.CharField(
-        label=_("login_field"),
-        write_only=True
-    )
+    login_field = serializers.CharField(label=_("login_field"), write_only=True)
     password = serializers.CharField(
         label=_("Password"),
-        style={'input_type': 'password'},
+        style={"input_type": "password"},
         trim_whitespace=False,
-        write_only=True
+        write_only=True,
     )
 
     def get_auth_user(self, username, email, phone_number, password):
         if not ((username or email or phone_number) and password):
-            msg = {'login_field': 'not valid login information.'}
+            msg = {"login_field": "not valid login information."}
             raise exceptions.ValidationError(msg)
-        user = authenticate(self.context.get('request'), username=username,
-                            email=email, phone_number=phone_number, password=password)
+        user = authenticate(
+            self.context.get("request"),
+            username=username,
+            email=email,
+            phone_number=phone_number,
+            password=password,
+        )
         return user
 
     @staticmethod
     def validate_auth_user_status(user):
         if not user.is_active:
-            msg = {'non_field_errors': 'User account is disabled.'}
+            msg = {"non_field_errors": "User account is disabled."}
             raise exceptions.ValidationError(msg)
 
     def validate(self, attrs):
-        login_field = attrs.get('login_field')
-        password = attrs.get('password')
+        login_field = attrs.get("login_field")
+        password = attrs.get("password")
         email, username, phone_number = None, None, None
         try:
             validate_email(login_field)
@@ -195,15 +255,16 @@ class UserLoginSerializer(serializers.Serializer):
             except UserModel.DoesNotExist:
                 pass
 
-            msg = {'non_field_errors':  'Unable to log in with provided credentials.'
-                                        if user else
-                                        'no user found with with provided credentials'
-                   }
+            msg = {
+                "non_field_errors": "Unable to log in with provided credentials."
+                if user
+                else "no user found with with provided credentials"
+            }
             raise exceptions.ValidationError(msg)
 
         self.validate_auth_user_status(user)
 
-        attrs['user'] = user
+        attrs["user"] = user
         return attrs
 
 
@@ -215,10 +276,10 @@ class MobileGlobalSettingsSerializer(serializers.Serializer):
 class UserSerializerTeacherSearch(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ('first_name', 'last_name')
+        fields = ("first_name", "last_name")
 
 
 class UserSerializerNames(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ('id', 'first_name', 'last_name')
+        fields = ("id", "first_name", "last_name")

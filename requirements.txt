@@ -11,3 +11,6 @@ django_jalali
 django-jalali-date 
 django-extensions
 django-cors-headers
+black[d]
+pyyaml
+uritemplate
