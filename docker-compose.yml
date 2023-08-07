@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3000 --reload
+    volumes:
+      - .:/lms
+    ports:
+      - "80:8000"
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    links:
+    - "db:pgsql-server"
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    ports:
+    - "8080:5432"
+    env_file:
+      - ./.env
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    volumes:
+    - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - db
+    links:
+    - "db:pgsql-server"
+volumes:
+  postgres_data:
+  pgadmin-data:
