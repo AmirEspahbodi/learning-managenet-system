@@ -1,4 +1,4 @@
-FROM python:3.11.4-slim
+FROM python:3.11.4-alpine
 
 RUN mkdir /lms
 WORKDIR /lms
@@ -10,6 +10,6 @@ ENV PYTHONUNBUFFERED 1
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY ./app .
+COPY ./app/* .
 
 

@@ -8,10 +8,10 @@ User = get_user_model()
 
 
 class MemberShipRoles(models.IntegerChoices):
+    STUDENT = 2, 'student'
     TEACHER = 3, 'teacher'
     INSTRUCTOR = 5, "instructor"
     TEACHING_ASSISTANT = 7, 'teaching assistant'
-    STUDENT = 2, 'student'
 
 
 class CourseTitle(models.Model):
@@ -82,12 +82,34 @@ class Course(models.Model):
 
 
 class MemberShip(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='members')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.PositiveSmallIntegerField(choices=MemberShipRoles.choices)
-
+    
+    def is_teacher(self) -> bool:
+        return self.role == MemberShipRoles.TEACHER
+    
+    def is_student(self) -> bool:
+        return self.role == MemberShipRoles.STUDENT
+    
+    def is_teaching_assistant(self) -> bool:
+        return self.role == MemberShipRoles.TEACHING_ASSISTANT
+    
+    def is_instructor(self) -> bool:
+        return self.role == MemberShipRoles.INSTRUCTOR
+    
     def __str__(self):
-        return
+        return f"{self.user.get_username()}|{self.course}|{[role for role in MemberShipRoles.choices if role[0]==self.role][0][1]}"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'course', 'user'
+                ],
+                name='unique_membership'
+            )
+        ]
 
 
 class CourseTime(models.Model):
@@ -150,7 +172,7 @@ class Session(models.Model):
                     'date', 'time_slot'
                 ],
                 name='unique_session_date_time_slot'
-            )
+            ),
         ]
 
     def get_jalali_date(self):

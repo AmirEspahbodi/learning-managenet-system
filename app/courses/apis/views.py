@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from ..models import Course
+from ..models import Course, MemberShip, MemberShipRoles
 from students.models import StudentEnroll
 from .serializers import CourseSerializer, CourseDetailSerializer
 from courses.permissions import IsStudent
@@ -13,43 +13,32 @@ class CourseSearchAPIView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        course_title = request.query_params.get('course_title')
-        group_course_number = request.query_params.get('group_course_number')
-        semester = request.query_params.get('semester')
-        courses = Course.objects.filter(
-            course_title__title=course_title
+        operator: str = request.query_params.get("operator") or "and"
+        q_operator = (
+            Q.OR
+            if operator.lower() == "or"
+            else Q.AND
+            if operator.lower() == "and"
+            else Q.XOR
         )
-        if group_course_number:
-            courses = courses.filter(group_course_number=group_course_number)
-        if semester:
-            courses = courses.filter(semester=semester)
-        return Response(CourseSerializer(courses, many=True).data, status=status.HTTP_200_OK)
+        course_title = request.query_params.get("course_title")
+        group_course_number = request.query_params.get("group_course_number")
+        semester = request.query_params.get("semester")
+        q_obj = Q()
+        q_obj.add(Q(course_title__title=course_title), q_operator) if course_title else None
+        q_obj.add(Q(group_course_number=group_course_number), q_operator) if group_course_number else None
+        q_obj.add(Q(semester=semester), q_operator) if semester else None
+        courses = Course.objects.filter(q_obj)
+        return Response(
+            CourseSerializer(courses, many=True).data, status=status.HTTP_200_OK
+        )
 
 
 class CourseSearchDetailAPIView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        student = request.user.student_user if hasattr(
-            request.user, "student_user") else None
-        course_id = kwargs.get('course_id')
+        course_id = kwargs.get("course_id")
         course = get_object_or_404(Course, pk=course_id)
-        content = CourseDetailSerializer(
-            course, context={'student': student}).data
+        content = CourseDetailSerializer(course, context={"course_id":course_id, 'is_student':hasattr(request.user, 'student_user'), "user_id":request.user.id}).data
         return Response(content, status=status.HTTP_200_OK)
-
-
-class CourseEnrollAPIView(GenericAPIView):
-    permission_classes = [IsStudent]
-
-    def post(self, request, *args, **kwargs):
-        course_id = kwargs.get('course_id')
-        student = request.user.student_user
-        course = get_object_or_404(Course, pk=course_id)
-        studentEnrollExist = StudentEnroll.objects.exists(
-            course=course, student=student)
-        if not studentEnrollExist:
-            return Response({"detail": "you already enrolled"}, status=status.HTTP_409_CONFLICT)
-        StudentEnroll.objects.create(
-            course=course, student=student)
-        return Response({"detail", "ok"}, status=status.HTTP_200_OK)

@@ -101,3 +101,5 @@ class SessionAdmin(admin.ModelAdmin):
         SessionAssignmentInline, SessionExamsInline
     ]
     ordering = ('-date', '-time_slot__start',)
+
+admin.site.register(MemberShip)

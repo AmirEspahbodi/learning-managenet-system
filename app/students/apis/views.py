@@ -8,22 +8,13 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.generics import GenericAPIView
 
-from courses.models import Session, Course
+from courses.models import Session, Course, MemberShip
 from courses.apis.serializers import SessionSerializer, CourseSerializer
-from .serializers import StudentRegisterSerializer
 from courses.permissions import IsStudent, IsRelativeStudentMixin
 from ..models import StudentEnroll
 
 
-class StudentRegisterAPIView(GenericAPIView):
-    permission_classes = [AllowAny]
-    serializer_class = StudentRegisterSerializer
 
-    def post(self, *args, **kwargs):
-        serializer = self.serializer_class(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"detail": "Ok"}, status=status.HTTP_201_CREATED)
 
 
 class StudentHomeAPIView(GenericAPIView):
@@ -46,7 +37,7 @@ class StudentHomeAPIView(GenericAPIView):
             "now": now
         },
             status=status.HTTP_200_OK
-        )
+        )    
 
 
 class StudentCourseDetailAPIView(IsRelativeStudentMixin, GenericAPIView):

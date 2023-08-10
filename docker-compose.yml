@@ -1,9 +1,9 @@
 version: '3.9'
 
 services:
-  web:
+  api:
     build: .
-    command: uvicorn app.main:app --host 0.0.0.0 --port 3000 --reload
+    command: app/manage.py runserver
     volumes:
       - .:/lms
     ports:
