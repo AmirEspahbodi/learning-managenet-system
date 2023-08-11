@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from .models import CourseTitle, Course, CourseTime, Session, MemberShip
-from students.models import StudentEnroll
 from exams.models import Exam
 from assignments.models import Assignment
 
@@ -28,12 +27,6 @@ class CourseTimeInline(admin.TabularInline):
     extra = 2
 
 
-class StudentEnrollInline(admin.TabularInline):
-    ordering = ('-student__user__first_name', )
-    model = StudentEnroll
-    readonly_fields = ('is_student_paid_percentage', )
-    extra = 5
-
 
 class SessionInline(admin.TabularInline):
     ordering = ('date', '-time_slot__start')
@@ -56,7 +49,6 @@ class GroupCourseAdmin(admin.ModelAdmin):
         MemberShipInline,
         CourseTimeInline,
         SessionInline,
-        StudentEnrollInline,
     ]
     fieldsets = (
         (None, {

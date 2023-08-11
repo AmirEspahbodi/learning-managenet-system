@@ -23,25 +23,19 @@ class Student(models.Model):
         return f"student: {self.user.username} ({self.user.last_name})"
 
 
-class StudentEnroll(models.Model):
-    id = models.BigAutoField(
-        auto_created=True,
-        primary_key=True,
-        serialize=False,
-        verbose_name='ID',
-    )
+class FinancialAids(models.Model):
     student = models.ForeignKey(
         Student,
         on_delete=models.CASCADE,
-        related_name='student_enrollments'
+        related_name='financial_aids'
     )
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
     )
-
-    is_student_access = models.BooleanField(default=False)
-    is_student_paid_percentage = models.BooleanField(default=False)
+    applying_reason = models.TextField()
+    annual_income = models.PositiveBigIntegerField()
+    ability_to_pay = models.PositiveBigIntegerField()
 
     def __str__(self):
         return f'student=({self.student.user}) course=({self.course})'

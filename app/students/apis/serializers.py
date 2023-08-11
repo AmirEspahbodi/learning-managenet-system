@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from students.models import Student
 from accounts.apis.serializers import UserRegisterL1Serializer, UserSerializerNames
-from ..models import StudentEnroll
 
 User = get_user_model()
 
@@ -38,11 +37,3 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = ('user', 'school', 'degree', 'field')
 
-
-class StudentEnrollSerializer(serializers.ModelSerializer):
-    student = StudentSerializer()
-
-    class Meta:
-        model = StudentEnroll
-        fields = ('student', 'course', 'is_student_access',
-                  'is_student_paid_percentage')

@@ -1,7 +1,6 @@
 import uuid
 from django.db import models
-from courses.models import Session
-from students.models import StudentEnroll
+from courses.models import Session, MemberShip
 from jalali_date import datetime2jalali
 
 # Create your models here.
@@ -43,7 +42,7 @@ class Exam(models.Model):
         db_table_comment = "exam for each session of course"
 
 
-class EnrolledStudenTakeExam(models.Model):
+class MemberTakeExam(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -52,10 +51,10 @@ class EnrolledStudenTakeExam(models.Model):
     exam = models.ForeignKey(
         Exam,
         on_delete=models.CASCADE,
-        related_name='enrolled_students_exam'
+        related_name='members_exam'
     )
-    student_enroll = models.ForeignKey(
-        StudentEnroll,
+    member = models.ForeignKey(
+        MemberShip,
         on_delete=models.CASCADE,
     )
     visit_datetime = models.DateTimeField(auto_now_add=True)
@@ -64,19 +63,19 @@ class EnrolledStudenTakeExam(models.Model):
         max_digits=5, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        return f"student exam: {self.exam} {self.student_enroll.student} {datetime2jalali(self.finish_datetime)}"
+        return f"student exam: {self.exam} {self.memeber.user} {datetime2jalali(self.finish_datetime)}"
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=[
                     'exam',
-                    'student_enroll'
+                    'member'
                 ],
-                name='unique_exams_enrolled_students_take_exam'
+                name='unique_exams_member_take_exam'
             )
         ]
-        db_table = "exams_enrolled_students_take_exam"
+        db_table = "exams_member_take_exam"
         db_table_comment = "a table betwen student takes and exam. It shows that the student participated in the exam"
 
 
@@ -112,14 +111,14 @@ class FTQuestionAnswer(models.Model):
         db_table_comment = "answer of the file/text type questions"
 
 
-class EnrolledStudenExamFTQuestion(models.Model):
+class MemberExamFTQuestion(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False
     )
-    enrolled_students_take_exam = models.ForeignKey(
-        EnrolledStudenTakeExam,
+    member_take_exam = models.ForeignKey(
+        MemberTakeExam,
         on_delete=models.CASCADE,
     )
     ft_question = models.ForeignKey(
@@ -136,14 +135,14 @@ class EnrolledStudenExamFTQuestion(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=[
-                    'enrolled_students_take_exam',
+                    'member_take_exam',
                     'ft_question'
                 ],
-                name='unique_exams_enrolled_studen_exam_ftquestion'
+                name='unique_exams_member_exam_ftquestion'
             )
         ]
-        db_table = "exams_enrolled_studen_exam_ftquestion"
+        db_table = "exams_member_exam_ftquestion"
         db_table_comment = "This table stores the student's answer to the exam file/text question"
 
     def __str__(self):
-        return f"student exam question answer: {self.enrolled_students_take_exam.exam} {self.ft_question.title} {datetime2jalali(self.finish_datetime)}"
+        return f"student exam question answer: {self.member_take_exam.exam} {self.ft_question.title} {datetime2jalali(self.finish_datetime)}"

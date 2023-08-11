@@ -1,13 +1,14 @@
 from django.contrib import admin
 
-from .models import Exam, EnrolledStudenTakeExam, FTQuestion, EnrolledStudenExamFTQuestion
+from .models import Exam, MemberTakeExam, FTQuestion, MemberExamFTQuestion
+
 # Register your models here.
 
 
-class EnrolledStudenTakeExamInline(admin.TabularInline):
-    model = EnrolledStudenTakeExam
+class MemberTakeExamInline(admin.TabularInline):
+    model = MemberTakeExam
     can_delete = False
-    readonly_fields = ('exam', 'student_enroll',
+    readonly_fields = ('exam', 'member',
                        'visit_datetime', 'finish_datetime', 'score')
 
 
@@ -21,7 +22,7 @@ class FTQuestionInline(admin.TabularInline):
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
     inlines = [
-        FTQuestionInline, EnrolledStudenTakeExamInline
+        FTQuestionInline, MemberTakeExamInline
     ]
     raw_id_fields = ('session', )
     ordering = ('create_datetime', 'start_datetime', 'end_datetime')
@@ -31,17 +32,17 @@ class ExamAdmin(admin.ModelAdmin):
                     'create_datetime', 'start_datetime', 'end_datetime')
 
 
-class EnrolledStudenExamFTQuestionInline(admin.TabularInline):
-    model = EnrolledStudenExamFTQuestion
+class MemberExamFTQuestionInline(admin.TabularInline):
+    model = MemberExamFTQuestion
     can_delete = False
-    readonly_fields = ('enrolled_students_take_exam', 'ft_question',
+    readonly_fields = ('member_take_exam', 'ft_question',
                        'send_datetime', 'finish_datetime', 'answered_text', 'answered_file')
 
 
 @admin.register(FTQuestion)
 class FTQuestionAdmin(admin.ModelAdmin):
     inlines = [
-        EnrolledStudenExamFTQuestionInline
+        MemberExamFTQuestionInline
     ]
     raw_id_fields = ('exam',)
     ordering = ('start_datetime', 'end_datetime')

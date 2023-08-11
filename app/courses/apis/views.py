@@ -4,7 +4,6 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from ..models import Course, MemberShip, MemberShipRoles
-from students.models import StudentEnroll
 from .serializers import CourseSerializer, CourseDetailSerializer
 from courses.permissions import IsStudent
 

@@ -6,7 +6,6 @@ from trs.apis.serializers import TimeSlotSerializer, SemesterSerializer
 from teachers.apis.serialisers import TeacherSerializer
 from assignments.apis.serializers import AssignmentSerializer
 from exams.apis.serializers import ExamSerializer
-from students.models import StudentEnroll
 from django.contrib.auth import get_user_model
 User = get_user_model()
 

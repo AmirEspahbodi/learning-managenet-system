@@ -1,8 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import exceptions
 from accounts.apis.permissions import IsEmailVerified
-from students.models import StudentEnroll
-from courses.models import Course
+from courses.models import Course, MemberShip, MemberShipRoles
 
 
 class IsStudent(IsEmailVerified):
@@ -51,9 +50,7 @@ class IsRelativeStudentMixin(IsRelativeBaseMixin):
         if not request.user.is_authenticated:
             raise exceptions.NotAuthenticated()
 
-        if request.user.is_student():
-            self.student = request.user.student_user
-        else:
+        if not request.user.is_student():
             raise exceptions.PermissionDenied()
 
         course_id = kwargs.get("course_id")
@@ -63,8 +60,8 @@ class IsRelativeStudentMixin(IsRelativeBaseMixin):
             raise exceptions.NotFound()
 
         try:
-            self.studentCourseEnroll = StudentEnroll.objects.get(
-                student=self.student, course=self.course)
+            self.studentCourseEnroll = MemberShip.objects.get(
+                user=request.user, course=self.course, role=MemberShipRoles.STUDENT)
         except ObjectDoesNotExist:
             raise exceptions.PermissionDenied()
 

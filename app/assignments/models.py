@@ -1,7 +1,6 @@
 import uuid
 from django.db import models
-from courses.models import Session
-from students.models import StudentEnroll
+from courses.models import Session, MemberShip
 from jalali_date import datetime2jalali
 
 # Create your models here.
@@ -43,7 +42,7 @@ class Assignment(models.Model):
         db_table_comment = "assignment for each session of course"
 
 
-class EnrolledStudenTakeAssignment(models.Model):
+class MemberTakeAssignment(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -52,10 +51,10 @@ class EnrolledStudenTakeAssignment(models.Model):
     assignment = models.ForeignKey(
         Assignment,
         on_delete=models.CASCADE,
-        related_name='enrolled_students_assignment'
+        related_name='members_assignment'
     )
-    student_enroll = models.ForeignKey(
-        StudentEnroll,
+    member = models.ForeignKey(
+        MemberShip,
         on_delete=models.CASCADE,
     )
     visit_datetime = models.DateTimeField(auto_now_add=True)
@@ -64,19 +63,19 @@ class EnrolledStudenTakeAssignment(models.Model):
         max_digits=5, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
-        return f"student assignment: {self.assignment} {self.student_enroll.student} {datetime2jalali(self.finish_datetime)}"
+        return f"student assignment: {self.assignment} {self.member.user} {datetime2jalali(self.finish_datetime)}"
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=[
                     'assignment',
-                    'student_enroll'
+                    'member'
                 ],
-                name='unique_assignments_enrolled_students_take_assignment'
+                name='unique_assignments_member_take_assignment'
             )
         ]
-        db_table = "assignments_enrolled_students_take_assignment"
+        db_table = "assignments_member_take_assignment"
         db_table_comment = "a table betwen student takes and assignment. It shows that the student participated in the assignment"
 
 
@@ -112,14 +111,14 @@ class FTQuestionAnswer(models.Model):
         db_table_comment = "answer of the file/text type questions"
 
 
-class EnrolledStudenAssignmentFTQuestion(models.Model):
+class MemberAssignmentFTQuestion(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False
     )
-    enrolled_students_take_assignment = models.ForeignKey(
-        EnrolledStudenTakeAssignment,
+    member_take_assignment = models.ForeignKey(
+        MemberTakeAssignment,
         on_delete=models.CASCADE,
     )
     ft_question = models.ForeignKey(
@@ -136,14 +135,14 @@ class EnrolledStudenAssignmentFTQuestion(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=[
-                    'enrolled_students_take_assignment',
+                    'member_take_assignment',
                     'ft_question'
                 ],
-                name='unique_assignments_enrolled_studen_assignment_fttquestion'
+                name='unique_member_assignment_studen_assignment_fttquestion'
             )
         ]
-        db_table = "assignments_enrolled_studen_assignment_fttquestion"
+        db_table = "assignments_member_assignment_fttquestion"
         db_table_comment = "This table stores the student's answer to the assignment file/text question"
 
     def __str__(self):
-        return f"student assignment question answer: {self.enrolled_students_take_assignment.assignment} {self.ft_question.title} {datetime2jalali(self.finish_datetime)}"
+        return f"student assignment question answer: {self.member_take_assignment.assignment} {self.ft_question.title} {datetime2jalali(self.finish_datetime)}"
