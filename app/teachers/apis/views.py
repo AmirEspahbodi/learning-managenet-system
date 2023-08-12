@@ -25,8 +25,9 @@ class TeacherHomeAPIView(GenericAPIView):
         teacher = request.user.teacher_user
         now = timezone.now().date()
         day_next_week = (timezone.now() + timedelta(days=7)).date()
-        courses = Course.objects.filter(
-            teacher=teacher)
+        memberships = MemberShip.objects.filter(
+            user=request.user, role=MemberShipRoles.TEACHER).select_related("course")
+        courses = [membership.course for membership in memberships]
         week_sessions = Session.objects.filter(Q(date__gte=now) & Q(
             date__lte=day_next_week) & Q(course__in=courses))
 

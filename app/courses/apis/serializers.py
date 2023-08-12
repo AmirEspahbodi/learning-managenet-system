@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from django.db.models import Q
 from rest_framework.fields import empty
 from rest_framework.serializers import ModelSerializer
@@ -39,6 +40,20 @@ class CourseSerializer(ModelSerializer):
         model = Course
         fields = ('id', 'course_title','course_times', 
                   'group_course_number', 'semester')
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        teacher_members:list[MemberShip] = MemberShip.objects.filter(
+           Q(id=representation["id"]) & (Q(role=MemberShipRoles.TEACHER) | Q(role=MemberShipRoles.INSTRUCTOR))).select_related('user')
+        representation['teachers'] = [
+            {'username': teacher_member.user.username, 'first_name':teacher_member.user.first_name, 'last_name':teacher_member.user.last_name}
+            for teacher_member in teacher_members if teacher_member.role == MemberShipRoles.TEACHER
+        ]
+        representation['instructors'] = [
+            {'username': teacher_member.user.username, 'first_name':teacher_member.user.first_name, 'last_name':teacher_member.user.last_name}
+            for teacher_member in teacher_members if teacher_member.role == MemberShipRoles.INSTRUCTOR
+        ]
+        return representation
 
 
 class CourseSerializerSlim(ModelSerializer):

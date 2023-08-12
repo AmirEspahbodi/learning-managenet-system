@@ -67,6 +67,5 @@ class StudentCourseEnroleAPIView(GenericAPIView):
                 course=course
             )
         except BaseException as e:
-            print(e)
             return Response(data={"message":"do not try again!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)

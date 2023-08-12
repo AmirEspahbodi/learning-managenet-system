@@ -9,25 +9,16 @@ from courses.permissions import IsStudent
 
 
 class CourseSearchAPIView(GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request, *args, **kwargs):
-        operator: str = request.query_params.get("operator") or "and"
-        q_operator = (
-            Q.OR
-            if operator.lower() == "or"
-            else Q.AND
-            if operator.lower() == "and"
-            else Q.XOR
-        )
-        course_title = request.query_params.get("course_title")
-        group_course_number = request.query_params.get("group_course_number")
-        semester = request.query_params.get("semester")
-        q_obj = Q()
-        q_obj.add(Q(course_title__title=course_title), q_operator) if course_title else None
-        q_obj.add(Q(group_course_number=group_course_number), q_operator) if group_course_number else None
-        q_obj.add(Q(semester=semester), q_operator) if semester else None
-        courses = Course.objects.filter(q_obj)
+        search_content = request.query_params.get("content")
+        if search_content is None:
+            courses = Course.objects.all()
+            return Response(
+                CourseSerializer(courses, many=True).data, status=status.HTTP_200_OK
+            )
+        courses = Course.objects.all()
         return Response(
             CourseSerializer(courses, many=True).data, status=status.HTTP_200_OK
         )
