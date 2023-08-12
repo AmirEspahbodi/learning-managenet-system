@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from students.models import Student
+from students.models import Student, FinancialAids
 from accounts.apis.serializers import UserRegisterL1Serializer, UserSerializerNames
 
 User = get_user_model()
@@ -37,3 +37,22 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = ('user', 'school', 'degree', 'field')
 
+
+class StudentFinancialAidsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FinancialAids
+        fields = ("applying_reason", "annual_income", "ability_to_pay")
+
+    def save(self, student, course, **kwargs):
+        validated_data = {**self.validated_data, **kwargs, "student":student,"course":course}
+        self.instance = self.create(validated_data)
+        return self.instance
+
+
+
+class ShowFinancialAids(serializers.ModelSerializer):
+    class Meta:
+        model = FinancialAids
+        fields = ('id', 'applying_reason', 'annual_income', 'ability_to_pay',
+                  'result', 'created_at', 'is_accepted')

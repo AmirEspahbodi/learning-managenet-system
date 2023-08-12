@@ -13,6 +13,11 @@ from accounts.validators import (
     UnicodeUsernameValidator,
     name_validator,
 )
+from accounts.validators import (
+    NationalCodeValidator,
+    PostalCodeValidator,
+    HomePhoneNumberValidator
+)
 from accounts.app_settings import account_settings
 from accounts.models import UserInformation, PasswordResetCode
 
@@ -103,7 +108,6 @@ class UserRegisterL1Serializer(serializers.ModelSerializer):
         write_only=True, required=True, validators=[validate_password]
     )
     password2 = serializers.CharField(write_only=True, required=True)
-    username = serializers.CharField(required=False)
 
     class Meta:
         model = UserModel
@@ -150,6 +154,10 @@ class UserRegisterL1Serializer(serializers.ModelSerializer):
 
 
 class UserRegisterL2Serializer(serializers.ModelSerializer):
+    national_code = serializers.CharField(validators=[NationalCodeValidator])
+    postal_code = serializers.CharField(validators=[PostalCodeValidator])
+    home_phone_number = serializers.CharField(validators=[HomePhoneNumberValidator])
+            
     class Meta:
         model = UserInformation
         fields = (
@@ -166,10 +174,6 @@ class UserRegisterL2Serializer(serializers.ModelSerializer):
         )
 
     def validate(self, data, *args, **kwargs):
-        print("\n\n")
-        print("111" * 45)
-        print(data)
-        print("\n\n")
         father_name_error = name_validator(data.get("father_name"), return_error=True)
         if father_name_error:
             raise serializers.ValidationError(father_name_error)
@@ -188,6 +192,7 @@ class UserRegisterL2Serializer(serializers.ModelSerializer):
             father_name=validated_data.get("father_name"),
             home_phone_number=validated_data.get("home_phone_number"),
         )
+        
         return userInformation
 
 

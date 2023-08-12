@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import TeacherCourseDetailAPIView, TeacherCourseSettingGetStudentsAPIView, \
-    TeacherSessionDetailAPIView, TeacherHomeAPIView
+from .views import TeacherCourseDetailAPIView, TeacherFinancialAidsAPIView, \
+     TeacherSessionDetailAPIView, TeacherHomeAPIView
 
 
 urlpatterns = [
@@ -9,6 +9,6 @@ urlpatterns = [
          TeacherCourseDetailAPIView.as_view(), name="course_detail"),
     path('session/<int:course_id>/',
          TeacherSessionDetailAPIView.as_view(), name="course_detail"),
-    path('course/<int:course_id>/setting/students/', TeacherCourseSettingGetStudentsAPIView.as_view(),
+    path('course/<int:course_id>/financial-aids/', TeacherFinancialAidsAPIView.as_view(),
          name="student_setting")
 ]

@@ -1,10 +1,10 @@
-from rest_framework.serializers import ModelSerializer, Serializer
+from rest_framework import serializers
+from rest_framework.fields import BooleanField, IntegerField, CharField
 from accounts.apis.serializers import UserSerializerTeacherSearch
-from rest_framework.fields import BooleanField, IntegerField
 from ..models import Teacher
 
 
-class TeacherSerializer(ModelSerializer):
+class TeacherSerializer(serializers.ModelSerializer):
     user = UserSerializerTeacherSearch()
 
     class Meta:
@@ -12,6 +12,13 @@ class TeacherSerializer(ModelSerializer):
         fields = ('user', 'experience')
 
 
-class StudentAccessSerializer(Serializer):
+class StudentAccessSerializer(serializers.Serializer):
     student_id = IntegerField()
     access = BooleanField()
+
+
+class FinancialAidsResultSerializer(serializers.Serializer):
+    financial_id = IntegerField()
+    student_id = IntegerField()
+    result = CharField()
+    is_accepted = BooleanField()

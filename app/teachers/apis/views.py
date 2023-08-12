@@ -7,12 +7,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 
-from courses.models import Session, Course
+from .serialisers import FinancialAidsResultSerializer
+from courses.models import Session, Course, MemberShip, MemberShipRoles
 from courses.apis.serializers import SessionSerializer, CourseSerializer
 from courses.permissions import IsTeacher, IsRelativeTeacherMixin
-from .serialisers import StudentAccessSerializer
-from students.models import Student
+from students.models import Student, FinancialAids
+from students.apis.serializers import ShowFinancialAids
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class TeacherHomeAPIView(GenericAPIView):
     permission_classes = [IsTeacher]
@@ -44,31 +47,6 @@ class TeacherCourseDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
         return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
 
 
-class TeacherCourseSettingGetStudentsAPIView(IsRelativeTeacherMixin, GenericAPIView):
-    permission_classes = [IsTeacher]
-    serializer_class = StudentAccessSerializer
-
-    # def get(self, request, *args, **kwargs):
-    #     studentEnrools = StudentEnroll.objects.filter(course=self.course)
-    #     return Response(StudentEnrollSerializer(studentEnrools, many=True).data, status=status.HTTP_200_OK)
-
-    # def put(self, request, *args, **kwargs):
-    #     print(request.data)
-    #     serializer = self.serializer_class(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     student = Student.objects.get(
-    #         user__id=serializer.data.get('student_id'))
-    #     self.course
-    #     try:
-    #         studentEnroll = StudentEnroll.objects.get(
-    #             course=self.course, student=student)
-    #     except ObjectDoesNotExist:
-    #         return Response({}, status=status.HTTP_403_FORBIDDEN)
-    #     studentEnroll.is_student_access = serializer.data.get('access')
-    #     studentEnroll.save()
-    #     return Response({"access": studentEnroll.is_student_access}, status=status.HTTP_200_OK)
-
-
 class TeacherSessionDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
 
@@ -77,3 +55,40 @@ class TeacherSessionDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         pass
+
+
+class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    permission_classes = [IsTeacher]
+    serializer_class = ShowFinancialAids
+    
+    def get(self, request, *args, **kwargs):
+        course_id = kwargs.get('course_id')
+        financial_aids = FinancialAids.objects.filter(course=course_id)
+        return Response(data=ShowFinancialAids(financial_aids, many=True).data, status=status.HTTP_200_OK)
+    
+    def post(self, request, *args, **kwargs):
+        serializer = FinancialAidsResultSerializer(data=request.data)
+        serializer.is_valid()
+        data = serializer.data
+        try:
+            user = User.objects.get(id=data['user_id'])
+        except ObjectDoesNotExist:
+            return Response(data={'detail': 'student does not exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            course = Course.objects.get(id=kwargs.get('course_id'))
+        except ObjectDoesNotExist:
+            return Response(data={'detail': 'course does not exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if data["is_accepted"]:
+            MemberShip.objects.get_or_create(
+                course = course,
+                user = user,
+                role = MemberShipRoles.STUDENT
+            )
+        FinancialAids.objects.filter(id=data["financial_id"]).update(
+            result = data["result"],
+            is_accepted = data["is_accepted"],
+        )
+        
+        return Response(data={"message":"OK"}, status=status.HTTP_200_OK)

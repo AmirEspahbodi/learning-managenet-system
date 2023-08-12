@@ -60,7 +60,7 @@ class IsRelativeStudentMixin(IsRelativeBaseMixin):
             raise exceptions.NotFound()
 
         try:
-            self.studentCourseEnroll = MemberShip.objects.get(
+            self.member = MemberShip.objects.get(
                 user=request.user, course=self.course, role=MemberShipRoles.STUDENT)
         except ObjectDoesNotExist:
             raise exceptions.PermissionDenied()
@@ -81,11 +81,13 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
             raise exceptions.PermissionDenied()
 
         self.course_id = kwargs.get("course_id")
-        self.teacher = request.user.teacher_user
         try:
             self.course = Course.objects.get(id=self.course_id)
         except ObjectDoesNotExist:
             raise exceptions.NotFound()
 
-        if self.course.teacher != self.teacher:
+        try:
+            self.member = MemberShip.objects.get(
+                user=request.user, course=self.course, role=MemberShipRoles.TEACHER)
+        except ObjectDoesNotExist:
             raise exceptions.PermissionDenied()
