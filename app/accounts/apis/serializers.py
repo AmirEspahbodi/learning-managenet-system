@@ -288,3 +288,8 @@ class UserSerializerNames(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ("id", "first_name", "last_name")
+
+class UserSerializerBaseInfo(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ("id", "first_name", "last_name", "username", "email", "phone_number")

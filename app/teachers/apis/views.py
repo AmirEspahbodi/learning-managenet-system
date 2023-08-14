@@ -64,7 +64,7 @@ class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):
     
     def get(self, request, *args, **kwargs):
         course_id = kwargs.get('course_id')
-        financial_aids = FinancialAids.objects.filter(course=course_id)
+        financial_aids = FinancialAids.objects.filter(course=course_id).select_related('student').select_related('student__user')
         return Response(data=ShowFinancialAids(financial_aids, many=True).data, status=status.HTTP_200_OK)
     
     def post(self, request, *args, **kwargs):
@@ -80,16 +80,21 @@ class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):
             course = Course.objects.get(id=kwargs.get('course_id'))
         except ObjectDoesNotExist:
             return Response(data={'detail': 'course does not exists'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if data["is_accepted"]:
-            MemberShip.objects.get_or_create(
-                course = course,
-                user = user,
-                role = MemberShipRoles.STUDENT
-            )
         FinancialAids.objects.filter(id=data["financial_id"]).update(
             result = data["result"],
             is_accepted = data["is_accepted"],
+            reviewed=True,
         )
+        if data["is_accepted"]:
+            if not (MemberShip.objects.filter(
+                Q(course=course), Q(user=user))).exists():
+                MemberShip.objects.create(
+                    course = course,
+                    user = user,
+                    role = MemberShipRoles.STUDENT
+                )
+            else:
+                return Response(data={'detail':'student is already member of course'}, status=status.HTTP_400_BAD_REQUEST)
+
         
         return Response(data={"message":"OK"}, status=status.HTTP_200_OK)

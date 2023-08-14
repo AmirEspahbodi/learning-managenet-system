@@ -26,7 +26,6 @@ class CourseTitleSerializer(ModelSerializer):
 
 
 class MemberShipSerializer(ModelSerializer):
-    
     class Meta:
         model = MemberShip
         fields = ('role', 'user')
@@ -44,7 +43,9 @@ class CourseSerializer(ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         teacher_members:list[MemberShip] = MemberShip.objects.filter(
-           Q(id=representation["id"]) & (Q(role=MemberShipRoles.TEACHER) | Q(role=MemberShipRoles.INSTRUCTOR))).select_related('user')
+           Q(id=representation["id"]) &
+           (Q(role=MemberShipRoles.TEACHER) | Q(role=MemberShipRoles.INSTRUCTOR))
+           ).select_related('user')
         representation['teachers'] = [
             {'username': teacher_member.user.username, 'first_name':teacher_member.user.first_name, 'last_name':teacher_member.user.last_name}
             for teacher_member in teacher_members if teacher_member.role == MemberShipRoles.TEACHER
@@ -67,6 +68,10 @@ class CourseSerializerSlim(ModelSerializer):
 
 
 class CourseDetailSerializer(CourseSerializer):
+    course_title = CourseTitleSerializer()
+    semester = SemesterSerializer()
+    course_times = CourseTimeSerializer(many=True, read_only=True)
+    
     def __init__(self, instance=None, data=empty, **kwargs):
         kwargs
         super().__init__(instance=instance, data=data, **kwargs)
@@ -78,18 +83,42 @@ class CourseDetailSerializer(CourseSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        representation['teachers'] = []
+        representation['instructors'] = []
+        representation['teaching_assistants'] = []
+        def append_to_list(li:list, member):
+            li.append(
+                    {
+                        'username':member.user.username,
+                        'first_name':member.user.first_name,
+                        'last_name':member.user.last_name
+                     }
+                )
+        representation['enrolled_count'] = 0
+        representation['is_member'] = False
+        
         course_id = self.context['course_id']
-        members:list[MemberShip] = MemberShip.objects.filter(Q(course=course_id) & (Q(role=MemberShipRoles.TEACHER) | Q(role=MemberShipRoles.TEACHING_ASSISTANT) | Q(role=MemberShipRoles.INSTRUCTOR))).values()
-        students_count = MemberShip.objects.filter(Q(course=course_id) & Q(role=MemberShipRoles.STUDENT)).count()
-        representation['enrolled_cout'] = students_count
-        representation['is_member'] = False if self.context['is_student'] is not None else MemberShip.objects.filter(Q(course=course_id) & Q(user=self.context.get('user_id'))).exists()
-        teacher_ids = [obj['user_id'] for obj in filter(lambda x: x['role'] == MemberShipRoles.TEACHER ,members)]
-        instructors_ids = [obj['user_id'] for obj in filter(lambda x: x['role'] == MemberShipRoles.INSTRUCTOR,members)]
-        teaching_assistants_ids = [obj['user_id'] for obj in filter(lambda x: x['role'] == MemberShipRoles.TEACHING_ASSISTANT ,members)]
-        non_student_members = User.objects.filter(id__in=[*teacher_ids,*instructors_ids,*teaching_assistants_ids]).values('id', 'first_name', 'last_name')
-        representation['teachers'] = [member for member in non_student_members if member['id'] in teacher_ids]
-        representation['instructors'] = [member for member in non_student_members if member['id'] in instructors_ids]
-        representation['teaching_assistants'] = [member for member in non_student_members if member['id'] in teaching_assistants_ids]
+        user_id = self.context.get('user_id')
+        members:list[MemberShip] = MemberShip.objects.filter(
+            Q(course=course_id) &
+            (
+                Q(role=MemberShipRoles.TEACHER) |
+                Q(role=MemberShipRoles.TEACHING_ASSISTANT) |
+                Q(role=MemberShipRoles.INSTRUCTOR)
+            )
+        ).select_related('user')
+        for member in members:
+            if user_id == member.user.id:
+                representation['is_member'] = True
+            if member.is_student():
+                representation['enrolled_count'] +=1
+            if member.is_teacher():
+                append_to_list(representation['teachers'], member)
+            if member.is_instructor():
+                append_to_list(representation['instructors'], member)
+            if member.is_teaching_assistant():
+                append_to_list(representation['teaching_assistants'], member)
+            pass
         return representation
 
 

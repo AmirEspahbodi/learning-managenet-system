@@ -30,5 +30,12 @@ class CourseSearchDetailAPIView(GenericAPIView):
     def get(self, request, *args, **kwargs):
         course_id = kwargs.get("course_id")
         course = get_object_or_404(Course, pk=course_id)
-        content = CourseDetailSerializer(course, context={"course_id":course_id, 'is_student':hasattr(request.user, 'student_user'), "user_id":request.user.id}).data
+        content = CourseDetailSerializer(
+            course, 
+            context={
+                "course_id":course_id,
+                'is_student':hasattr(request.user, 'student_user'),
+                "user_id":request.user.id
+                }
+            ).data
         return Response(content, status=status.HTTP_200_OK)

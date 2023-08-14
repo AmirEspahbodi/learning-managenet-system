@@ -39,6 +39,7 @@ class FinancialAids(models.Model):
     result = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
+    reviewed = models.BooleanField(default=False)
     def __str__(self):
         return f'student=({self.student.user}) course=({self.course})'
 

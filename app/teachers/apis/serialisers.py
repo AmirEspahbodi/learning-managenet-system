@@ -19,6 +19,6 @@ class StudentAccessSerializer(serializers.Serializer):
 
 class FinancialAidsResultSerializer(serializers.Serializer):
     financial_id = IntegerField()
-    student_id = IntegerField()
+    user_id = IntegerField()
     result = CharField()
     is_accepted = BooleanField()
