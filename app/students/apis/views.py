@@ -12,7 +12,8 @@ from rest_framework.generics import GenericAPIView
 from courses.models import Session, Course, MemberShip, MemberShipRoles
 from courses.apis.serializers import SessionSerializer, CourseSerializer
 from courses.permissions import IsStudent, IsRelativeStudentMixin
-
+from students.models import FinancialAids
+from students.apis.serializers import StudentFinancialAids
 
 class StudentHomeAPIView(GenericAPIView):
     permission_classes = [IsStudent]
@@ -69,3 +70,10 @@ class StudentCourseEnroleAPIView(GenericAPIView):
         except BaseException as e:
             return Response(data={"message":"do not try again!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)
+
+
+class StudentGetFinancialAidAPIView(GenericAPIView):
+    permission_classes = [IsStudent]
+    def get(self, request, *args, **kwargs):
+        financial_aids = request.user.student_user.financial_aids
+        return Response(data=StudentFinancialAids(financial_aids, many=True).data, status=status.HTTP_200_OK)

@@ -29,8 +29,8 @@ class TeacherHomeAPIView(GenericAPIView):
             user=request.user, role=MemberShipRoles.TEACHER).select_related("course")
         courses = [membership.course for membership in memberships]
         week_sessions = Session.objects.filter(Q(date__gte=now) & Q(
-            date__lte=day_next_week) & Q(course__in=courses))
-
+            date__lt=day_next_week) & Q(course__in=courses))
+        print([week_session.date for week_session in week_sessions])
         return Response({
             'courses': CourseSerializer(courses,  many=True).data,
             'sessions': SessionSerializer(week_sessions, many=True).data,
@@ -42,7 +42,7 @@ class TeacherHomeAPIView(GenericAPIView):
 
 class TeacherCourseDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
-
+    serializer_class = SessionSerializer
     def get(self, request, *args, **kwargs):
         sessions = Session.objects.filter(course=self.course).order_by('date')
         return Response({"sessions": SessionSerializer(sessions, many=True).data}, status=status.HTTP_200_OK)
@@ -50,12 +50,12 @@ class TeacherCourseDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
 
 class TeacherSessionDetailAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
-
+    serializer_class = SessionSerializer
     def get(self, request, *args, **kwargs):
-        pass
-
-    def post(self, request, *args, **kwargs):
-        pass
+        return Response(
+            data=SessionSerializer(self.session).data,
+            status=status.HTTP_200_OK
+        )
 
 
 class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):

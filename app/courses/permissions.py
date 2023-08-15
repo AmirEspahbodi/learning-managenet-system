@@ -1,7 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import exceptions
 from accounts.apis.permissions import IsEmailVerified
-from courses.models import Course, MemberShip, MemberShipRoles
+from courses.models import Course, MemberShip, MemberShipRoles, Session
+from assignments.models import Assignment
+from exams.models import Exam
 
 
 class IsStudent(IsEmailVerified):
@@ -80,11 +82,22 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
         else:
             raise exceptions.PermissionDenied()
 
-        self.course_id = kwargs.get("course_id")
-        try:
+        if "course_id" in kwargs:
+            self.course_id = kwargs.get("course_id")
             self.course = Course.objects.get(id=self.course_id)
-        except ObjectDoesNotExist:
-            raise exceptions.NotFound()
+        elif "session_id" in kwargs:
+            self.session_id = kwargs.get("session_id")
+            self.session = Session.objects.select_related('course').get(id=self.session_id)
+            self.course = self.session.course
+        elif 'assignment_id' in kwargs:
+            self.assignment_id = self.assignment_id = kwargs.get("assignment_id")
+            self.assignment = Assignment.objects.select_related('session').select_related('session__course').get(id=self.assignment_id)
+            self.course = self.assignment.session.course
+            
+        elif 'exam_id' in kwargs:
+            self.exam_id = kwargs.get("exam_id")
+            self.exam = Exam.objects.select_related('session').select_related('session__course').get(id=self.exam_id)
+            self.course = self.exam.session.course
 
         try:
             self.member = MemberShip.objects.get(

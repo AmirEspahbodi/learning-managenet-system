@@ -127,8 +127,8 @@ class SessionSerializer(ModelSerializer):
     assignments = AssignmentSerializer(many=True, read_only=True)
     exams = ExamSerializer(many=True, read_only=True)
     course = CourseSerializerSlim()
-
+    
     class Meta:
         model = Session
-        fields = ('id', 'course', 'session_number', 'date',
+        fields = ('id', 'session_number', 'date', 'course',
                   'time_slot', 'description', 'assignments', 'exams')

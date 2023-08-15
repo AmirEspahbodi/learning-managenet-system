@@ -57,3 +57,11 @@ class ShowFinancialAids(serializers.ModelSerializer):
         model = FinancialAids
         fields = ('id', 'student', 'applying_reason', 'annual_income', 'ability_to_pay',
                   'result', 'created_at', 'is_accepted', 'reviewed')
+
+
+
+class StudentFinancialAids(serializers.ModelSerializer):
+    class Meta:
+        model = FinancialAids
+        fields = ('id', 'applying_reason', 'annual_income', 'ability_to_pay',
+                  'result', 'created_at', 'is_accepted', 'reviewed')

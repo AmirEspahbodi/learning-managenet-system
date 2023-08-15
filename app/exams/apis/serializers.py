@@ -4,4 +4,12 @@ from ..models import Exam
 class ExamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exam
-        fields = ('id', 'session', 'description', 'exam_number', 'start_datetime', 'end_datetime')
+        fields = (
+            'id', 'session', 'title',
+            'description', 'exam_number',
+            'start_datetime', 'end_datetime'
+        )
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        
+        return response

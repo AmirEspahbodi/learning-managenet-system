@@ -26,27 +26,35 @@ def create_session(course, date, time_slot):
 def generate_sessions_for_group_courses_by_times(sender, instance, created, **kwargs):
     if created:
 
-        current_date = datetime.strptime(
-            instance.course.start_date, '%Y-%m-%d').date()
-        end_date = datetime.strptime(
-            instance.course.end_date, '%Y-%m-%d').date()
+        start_date = instance.course.start_date
+        end_date = instance.course.end_date
         time_slot = instance.time_slot
+        print(f"start date {start_date}")
 
+        
+        start_date_day = start_date.weekday()
         time_slot_day = time_slot.day-1
-        current_date_day = current_date.weekday()
+    
+        # print(f"start date day {start_date_day}")
+        # print(f"time_slot day {time_slot_day}")
+        
+        session_date = start_date+timedelta(
+            days=abs(
+                time_slot_day-start_date_day
+                if start_date_day <= time_slot_day else
+                (7 - start_date_day) + time_slot_day
+            )
+        )
+        # print(f"first session date {session_date}")
+        # print(f"first session day {session_date.weekday()}")
+        # session_date += timedelta(days=7)
+        # print(f"second session date {session_date}")
+        # print(f"second session day {session_date.weekday()}")
 
-        days_differ = 0
-        if current_date_day <= time_slot_day:
-            days_differ = time_slot_day - current_date_day
-        else:
-            days_differ = (6 - current_date_day) + time_slot_day
-
-        current_date += timedelta(days=days_differ)
-        create_session(instance.course, current_date, time_slot)
-
-        while current_date <= end_date:
-            current_date += timedelta(days=7)
-            create_session(instance.course, current_date, time_slot)
+        create_session(instance.course, session_date, time_slot)
+        while session_date <= end_date:
+            session_date += timedelta(days=7)
+            create_session(instance.course, session_date, time_slot)
 
         # تنظیم شماره کلاس های درس
         this_group_course_sessions = Session.objects.filter(
