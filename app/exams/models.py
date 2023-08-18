@@ -104,7 +104,6 @@ class MemberExamFTQuestion(models.Model):
         on_delete=models.CASCADE,
     )
     ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
-    finish_datetime = models.DateTimeField()
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     answered_text = models.TextField(null=True, blank=True)
     answered_file = models.FileField(

@@ -22,8 +22,9 @@ from exams.apis.serializers import (
     FTQuestionAnswerSerializer,
     FTQuestionSerializer,
     MemberExamFTQuestionSerializer,
+    MemberExamFTQuestionScoreSerializer,
 )
-from exams.models import FTQuestion, MemberExamFTQuestion
+from exams.models import FTQuestion, MemberExamFTQuestion, MemberTakeExam
 
 User = get_user_model()
 
@@ -33,7 +34,6 @@ class TeacherHomeAPIView(GenericAPIView):
     serializer_class = None
 
     def get(self, request, *args, **kwargs):
-        teacher = request.user.teacher_user
         now = timezone.now().date()
         day_next_week = (timezone.now() + timedelta(days=7)).date()
         memberships = MemberShip.objects.filter(
@@ -204,17 +204,30 @@ class TeacherExamFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView)
             )
 
 
-class TeacherExamFTQuestionStudentAnswerScoreAPIView(GenericAPIView):
+class TeacherMemberExamAPIView(GenericAPIView):
+    def get(self, request, *args, **kwargs):
+        member_exam_id = kwargs.get("member_exam_id")
+        try:
+            member_take_exam = MemberTakeExam.objects.select_related(
+                "exam__session"
+            ).get(id=member_exam_id)
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        member_course = member_take_exam.exam.session.course
+        if not MemberShip.objects.filter(
+            course=member_course,
+            user=request.user.teacher_user,
+            role=MemberShipRoles.TEACHER,
+        ).exists():
+            raise exceptions.PermissionDenied()
+
+
+class TeacherMemberExamFtQuestionAPIView(GenericAPIView):
     permission_classes = [IsTeacher]
     serializer_class = MemberExamFTQuestionSerializer
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         member_exam_ftquestion_id = kwargs.get("member_exam_ftquestion_id")
-        if member_exam_ftquestion_id is None:
-            return Response(
-                data={"detail": "you must provide member exam ftquestion id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         try:
             memberexamftquestion = (
                 MemberExamFTQuestion.objects.select_related("member_take_exam")
@@ -225,10 +238,34 @@ class TeacherExamFTQuestionStudentAnswerScoreAPIView(GenericAPIView):
             raise exceptions.NotFound()
         member_course = memberexamftquestion.member_take_exam.exam.session.course
         if not MemberShip.objects.filter(
-            course=member_course, user=request.user.teacher_user
+            course=member_course,
+            user=request.user.teacher_user,
+            role=MemberShipRoles.TEACHER,
         ).exists():
             raise exceptions.PermissionDenied()
-        serilizer = self.serializer_class(data=request.data)
+        return Response(
+            data=MemberExamFTQuestionSerializer(memberexamftquestion).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, *args, **kwargs):
+        member_exam_ftquestion_id = kwargs.get("member_exam_ftquestion_id")
+        try:
+            memberexamftquestion = (
+                MemberExamFTQuestion.objects.select_related("member_take_exam")
+                .select_related("member_take_exam__exam")
+                .get(id=member_exam_ftquestion_id)
+            )
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        member_course = memberexamftquestion.member_take_exam.exam.session.course
+        if not MemberShip.objects.filter(
+            course=member_course,
+            user=request.user.teacher_user,
+            role=MemberShipRoles.TEACHER,
+        ).exists():
+            raise exceptions.PermissionDenied()
+        serilizer = MemberExamFTQuestionScoreSerializer(data=request.data)
         if serilizer.is_valid():
             memberexamftquestion.score = serilizer.data["score"]
             memberexamftquestion.save()

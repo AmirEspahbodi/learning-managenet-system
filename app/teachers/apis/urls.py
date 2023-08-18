@@ -7,7 +7,7 @@ from .views import (
     TeacherExamCreateAPIView,
     TeacherExamQuestionAPIView,
     TeacherExamFtQuestionAnswerAPIView,
-    TeacherExamFTQuestionStudentAnswerScoreAPIView,
+    TeacherMemberExamFtQuestionAPIView,
 )
 
 
@@ -55,7 +55,7 @@ urlpatterns = [
     ),
     path(
         "exam/ftquestion/member/answer/<int:member_exam_ftquestion_id>/score/",
-        TeacherExamFTQuestionStudentAnswerScoreAPIView.as_view(),
+        TeacherMemberExamFtQuestionAPIView.as_view(),
         name="exam_ftquestion_member_answer_score",
     ),
 ]

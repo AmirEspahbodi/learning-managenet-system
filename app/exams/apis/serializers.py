@@ -1,6 +1,12 @@
 from rest_framework import serializers, fields
 from rest_framework.exceptions import ValidationError
-from ..models import Exam, FTQuestion, FTQuestionAnswer, FTQuestion
+from ..models import (
+    Exam,
+    FTQuestion,
+    FTQuestionAnswer,
+    FTQuestion,
+    MemberExamFTQuestion,
+)
 
 
 class ExamFTQuestionSerializer(serializers.ModelSerializer):
@@ -149,5 +155,17 @@ class FTQuestionSerializer(serializers.ModelSerializer):
         return ft_question_answer
 
 
-class MemberExamFTQuestionSerializer(serializers.Serializer):
-    score = FTQuestionAnswerSerializer
+class MemberExamFTQuestionScoreSerializer(serializers.Serializer):
+    score = fields.IntegerField()
+
+
+class MemberExamFTQuestionSerializer(serializers.ModelSerializer):
+    class Config:
+        model = MemberExamFTQuestion
+        fields = (
+            "score",
+            "answered_text",
+            "answered_file",
+            "created_at",
+            "updated_at",
+        )
