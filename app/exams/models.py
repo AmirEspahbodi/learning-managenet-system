@@ -11,17 +11,12 @@ class Exam(models.Model):
         auto_created=True,
         primary_key=True,
         serialize=False,
-        verbose_name='ID',
+        verbose_name="ID",
     )
-    session = models.ForeignKey(
-        Session,
-        on_delete=models.CASCADE,
-        related_name='exams'
-    )
-    title = models.CharField(max_length=255, null=True, blank=True)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="exams")
+    title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    exam_number = models.PositiveSmallIntegerField(
-        null=True, blank=True, editable=False)
+    exam_number = models.PositiveSmallIntegerField(editable=False)
     create_datetime = models.DateTimeField(auto_now_add=True)
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
@@ -43,15 +38,9 @@ class Exam(models.Model):
 
 
 class MemberTakeExam(models.Model):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     exam = models.ForeignKey(
-        Exam,
-        on_delete=models.CASCADE,
-        related_name='members_exam'
+        Exam, on_delete=models.CASCADE, related_name="member_exams"
     )
     member = models.ForeignKey(
         MemberShip,
@@ -59,8 +48,7 @@ class MemberTakeExam(models.Model):
     )
     visit_datetime = models.DateTimeField(auto_now_add=True)
     finish_datetime = models.DateTimeField(null=True, blank=True)
-    score = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True)
+    score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f"student exam: {self.exam} {self.memeber.user} {datetime2jalali(self.finish_datetime)}"
@@ -68,11 +56,7 @@ class MemberTakeExam(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=[
-                    'exam',
-                    'member'
-                ],
-                name='unique_exams_member_take_exam'
+                fields=["exam", "member"], name="unique_exams_member_take_exam"
             )
         ]
         db_table = "exams_member_take_exam"
@@ -80,13 +64,12 @@ class MemberTakeExam(models.Model):
 
 
 class FTQuestion(models.Model):
-    exam = models.ForeignKey(
-        Exam,
-        on_delete=models.CASCADE)
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="ftquestions")
     title = models.CharField(max_length=255)
     text = models.TextField(null=True, blank=True)
-    file = models.FileField(
-        upload_to='assignment/questions/', null=True, blank=True)
+    file = models.FileField(upload_to="exam/questions/", null=True, blank=True)
+    created_datetime = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
 
@@ -100,11 +83,14 @@ class FTQuestion(models.Model):
 
 class FTQuestionAnswer(models.Model):
     ft_question = models.ForeignKey(
-        FTQuestion,
-        on_delete=models.CASCADE
+        FTQuestion, on_delete=models.CASCADE, related_name="ftquestion_answers"
     )
     answer_text = models.TextField(null=True, blank=True)
-    answer_file = models.FileField(upload_to='assignment/teacher/answers/')
+    answer_file = models.FileField(
+        null=True, blank=True, upload_to="exam/teacher/answers/"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "exams_ftquestion_answer"
@@ -112,37 +98,32 @@ class FTQuestionAnswer(models.Model):
 
 
 class MemberExamFTQuestion(models.Model):
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     member_take_exam = models.ForeignKey(
         MemberTakeExam,
         on_delete=models.CASCADE,
     )
-    ft_question = models.ForeignKey(
-        FTQuestion,
-        on_delete=models.CASCADE
-    )
-    send_datetime = models.DateTimeField()
+    ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
     finish_datetime = models.DateTimeField()
+    score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     answered_text = models.TextField(null=True, blank=True)
     answered_file = models.FileField(
-        upload_to='exam/students/answers/', null=True, blank=True)
+        upload_to="exam/students/answers/", null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=[
-                    'member_take_exam',
-                    'ft_question'
-                ],
-                name='unique_exams_member_exam_ftquestion'
+                fields=["member_take_exam", "ft_question"],
+                name="unique_exams_member_exam_ftquestion",
             )
         ]
         db_table = "exams_member_exam_ftquestion"
-        db_table_comment = "This table stores the student's answer to the exam file/text question"
+        db_table_comment = (
+            "This table stores the student's answer to the exam file/text question"
+        )
 
     def __str__(self):
         return f"student exam question answer: {self.member_take_exam.exam} {self.ft_question.title} {datetime2jalali(self.finish_datetime)}"
