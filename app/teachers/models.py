@@ -7,7 +7,7 @@ from core.db.mixins.timestamp import TimeStampMixin
 User = get_user_model()
 
 
-class Teacher(TimeStampMixin, models.Model):
+class Teacher(TimeStampMixin):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -26,7 +26,7 @@ class Teacher(TimeStampMixin, models.Model):
         )
 
 
-class TeacherPublished(TimeStampMixin, models.Model):
+class TeacherPublished(TimeStampMixin):
     teacher = models.ForeignKey(
         Teacher,
         on_delete=models.CASCADE,
@@ -41,7 +41,7 @@ class TeacherPublished(TimeStampMixin, models.Model):
         db_table = "teachers_teacher_published"
 
 
-class TeacherEducation(TimeStampMixin, models.Model):
+class TeacherEducation(TimeStampMixin):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     education = models.CharField(max_length=300)
     university = models.CharField(max_length=300)

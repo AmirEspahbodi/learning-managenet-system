@@ -7,7 +7,7 @@ from core.db.mixins.timestamp import TimeStampMixin
 # Create your models here.
 
 
-class Exam(TimeStampMixin, models.Model):
+class Exam(TimeStampMixin):
     id = models.AutoField(
         auto_created=True,
         primary_key=True,
@@ -18,14 +18,14 @@ class Exam(TimeStampMixin, models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     exam_number = models.PositiveSmallIntegerField(editable=False)
-    statrt_at = models.DateTimeField()
+    start_at = models.DateTimeField()
     end_at = models.DateTimeField()
 
     def get_jalali_created_at(self):
         return str(datetime2jalali(self.created_at))[:19]
 
-    def get_jalali_statrt_at(self):
-        return str(datetime2jalali(self.statrt_at))[:19]
+    def get_jalali_start_at(self):
+        return str(datetime2jalali(self.start_at))[:19]
 
     def get_jalali_end_at(self):
         return str(datetime2jalali(self.end_at))[:19]
@@ -37,7 +37,7 @@ class Exam(TimeStampMixin, models.Model):
         db_table_comment = "exam for each session of course"
 
 
-class MemberTakeExam(TimeStampMixin, models.Model):
+class MemberTakeExam(TimeStampMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     exam = models.ForeignKey(
         Exam, on_delete=models.CASCADE, related_name="exam_members"
@@ -63,13 +63,13 @@ class MemberTakeExam(TimeStampMixin, models.Model):
         db_table_comment = "a table betwen student takes and exam. It shows that the student participated in the exam"
 
 
-class FTQuestion(TimeStampMixin, models.Model):
+class FTQuestion(TimeStampMixin):
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="ftquestions")
     title = models.CharField(max_length=255)
     text = models.TextField(null=True, blank=True)
     file = models.FileField(upload_to="exam/questions/", null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
-    statrt_at = models.DateTimeField()
+    start_at = models.DateTimeField()
     end_at = models.DateTimeField()
 
     class Meta:
@@ -80,7 +80,7 @@ class FTQuestion(TimeStampMixin, models.Model):
         return f"f/t question:  {self.exam} {self.title[:50]}"
 
 
-class FTQuestionAnswer(TimeStampMixin, models.Model):
+class FTQuestionAnswer(TimeStampMixin):
     ft_question = models.ForeignKey(
         FTQuestion, on_delete=models.CASCADE, related_name="ftquestion_answers"
     )
@@ -94,7 +94,7 @@ class FTQuestionAnswer(TimeStampMixin, models.Model):
         db_table_comment = "answer of the file/text type questions"
 
 
-class MemberExamFTQuestion(TimeStampMixin, models.Model):
+class MemberExamFTQuestion(TimeStampMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     member_take_exam = models.ForeignKey(
         MemberTakeExam,

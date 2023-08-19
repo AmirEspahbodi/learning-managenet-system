@@ -2,8 +2,16 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import exceptions
 from accounts.apis.permissions import IsEmailVerified
 from courses.models import Course, MemberShip, MemberShipRoles, Session
-from assignments.models import Assignment
-from exams.models import Exam, FTQuestion, FTQuestionAnswer
+from assignments.models import (
+    Assignment,
+    FTQuestion as AssignmentFTQuestion,
+    FTQuestionAnswer as AssignmentFTQuestionAnswer,
+)
+from exams.models import (
+    Exam,
+    FTQuestion as ExamFTQuestion,
+    FTQuestionAnswer as ExamFTQuestionAnswer,
+)
 
 
 class IsStudent(IsEmailVerified):
@@ -112,15 +120,6 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
                     id=self.session_id
                 )
                 self.course = self.session.course
-            elif "assignment_id" in kwargs:
-                self.assignment_id = self.assignment_id = kwargs.get("assignment_id")
-                self.assignment = (
-                    Assignment.objects.select_related("session")
-                    .select_related("session__course")
-                    .get(id=self.assignment_id)
-                )
-                self.session = self.assignment.session
-                self.course = self.assignment.session.course
 
             elif "exam_id" in kwargs:
                 self.exam_id = kwargs.get("exam_id")
@@ -134,27 +133,63 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
 
             elif "exam_ftquestion_id" in kwargs:
                 self.exam_ftquestion_id = kwargs.get("exam_ftquestion_id")
-                self.ftquestion = (
-                    FTQuestion.objects.select_related("exam")
+                self.exam_ftquestion = (
+                    ExamFTQuestion.objects.select_related("exam")
                     .select_related("exam__session")
                     .get(id=self.exam_ftquestion_id)
                 )
-                self.exam = self.ftquestion.exam
+                self.exam = self.exam_ftquestion.exam
                 self.session = self.exam.session
-                self.course = self.exam.session.course
+                self.course = self.session.course
 
             elif "exam_ftquestion_answer_id" in kwargs:
                 self.exam_ftquestion_answer_id = kwargs.get("exam_ftquestion_answer_id")
-                self.ftquestionanswer = (
-                    FTQuestionAnswer.objects.select_related("ft_question")
+                self.exam_ftquestionanswer = (
+                    ExamFTQuestionAnswer.objects.select_related("ft_question")
                     .select_related("ft_question__exam")
                     .get(id=self.exam_ftquestion_answer_id)
                 )
-                self.ftquestion = self.ftquestionanswer.ft_question
-                self.exam = self.ftquestion.exam
+                self.exam_ftquestion = self.exam_ftquestionanswer.ft_question
+                self.exam = self.exam_ftquestion.exam
                 self.session = self.exam.session
-                self.course = self.exam.session.course
-            pass
+                self.course = self.session.course
+
+            elif "assignment_id" in kwargs:
+                self.assignment_id = self.assignment_id = kwargs.get("assignment_id")
+                self.assignment = (
+                    Assignment.objects.select_related("session")
+                    .select_related("session__course")
+                    .get(id=self.assignment_id)
+                )
+                self.session = self.assignment.session
+                self.course = self.assignment.session.course
+
+            elif "assignment_ftquestion_id" in kwargs:
+                self.assignment_ftquestion_id = kwargs.get("assignment_ftquestion_id")
+                self.assignment_ftquestion = (
+                    AssignmentFTQuestion.objects.select_related("assignment")
+                    .select_related("assignment__session")
+                    .get(id=self.assignment_ftquestion_id)
+                )
+                self.assignment = self.assignment_ftquestion.assignment
+                self.session = self.assignment.session
+                self.course = self.session.course
+
+            elif "assignment_ftquestion_answer_id" in kwargs:
+                self.assignment_ftquestion_answer_id = kwargs.get(
+                    "exam_ftquestion_answer_id"
+                )
+                self.assignment_ftquestionanswer = (
+                    AssignmentFTQuestionAnswer.objects.select_related("ft_question")
+                    .select_related("ft_question__exam")
+                    .get(id=self.assignment_ftquestion_answer_id)
+                )
+                self.assignment_ftquestion = (
+                    self.assignment_ftquestionanswer.ft_question
+                )
+                self.assignment = self.assignment_ftquestion.assignment
+                self.session = self.assignment.session
+                self.course = self.session.course
         except ObjectDoesNotExist:
             raise exceptions.NotFound()
         try:

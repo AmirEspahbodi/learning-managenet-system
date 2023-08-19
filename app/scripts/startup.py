@@ -1,5 +1,5 @@
 from datetime import date
-from accounts.models import User, Roles
+from accounts.models import User, Roles, VerificationStatus
 from trs.models import Room, Semester, TimeSlot, Semseters, Days_Of_Week
 from courses.models import CourseTitle, Course, CourseTime, MemberShip, MemberShipRoles
 from teachers.models import Teacher
@@ -28,6 +28,7 @@ def run():
             last_name=f"teacher" if i < 3 else f"student",
             phone_number=f"+98901397140{i}" if i < 3 else f"+98901397150{i-3}",
             role=Roles.NOT_DEFINED,
+            verification_status=VerificationStatus.BOTH,
         )
         for i in range(10)
     ]
@@ -98,7 +99,7 @@ def run():
     ]
     print(f"courses {courses} created!\n\n")
 
-    studentEnroll: list[MemberShip] = [
+    student_membership: list[MemberShip] = [
         MemberShip.objects.create(
             user=student[j].user, course=courses[i], role=MemberShipRoles.STUDENT
         )
@@ -106,7 +107,15 @@ def run():
         for i in range(0, len(courses))
         if (i + j < len(student))
     ]
-    print(f"studentEnroll {studentEnroll} created!\n\n")
+    print(f"student_membership {student_membership} created!\n\n")
+
+    teacher_membership: list[MemberShip] = [
+        MemberShip.objects.create(
+            user=teachers[i].user, course=courses[i], role=MemberShipRoles.TEACHER
+        )
+        for i in range(min(len(teachers), len(courses)))
+    ]
+    print(f"student_membership {teacher_membership} created!\n\n")
 
     course_time: list[CourseTime] = [
         CourseTime.objects.create(

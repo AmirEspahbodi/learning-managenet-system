@@ -25,7 +25,11 @@ from exams.apis.serializers import (
     MemberExamFTQuestionScoreSerializer,
     MemberTakeExamSerilizer,
 )
-from exams.models import FTQuestion, MemberExamFTQuestion, MemberTakeExam
+from exams.models import (
+    FTQuestion as ExamFTQuestion,
+    MemberExamFTQuestion,
+    MemberTakeExam,
+)
 from assignments.apis.serializers import (
     AssignmentRequestSerializer,
     AssignmentSerializer,
@@ -142,7 +146,7 @@ class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):
         return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
 
 
-class TeacherExamCreateAPIView(IsRelativeTeacherMixin, GenericAPIView):
+class TeacherExamAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
     serializer_class = ExamRequestSerializer
 
@@ -153,8 +157,8 @@ class TeacherExamCreateAPIView(IsRelativeTeacherMixin, GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            data=ExamResponseSerializer(instance=self.exam).data,
-            status=status.HTTP_201_CREATED,
+            data=ExamResponseSerializer(self.exam).data,
+            status=status.HTTP_200_OK,
         )
 
     def post(self, request, *args, **kwargs) -> ExamSerializer:
@@ -196,7 +200,7 @@ class TeacherExamQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            data=ExamFTQuestionSerializer(self.ftquestion).data,
+            data=ExamFTQuestionSerializer(self.exam_ftquestion).data,
             status=status.HTTP_200_OK,
         )
 
@@ -213,7 +217,7 @@ class TeacherExamFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView)
             )
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            instance = serializer.save(ft_question=self.ftquestion)
+            instance = serializer.save(exam_ftquestion=self.exam_ftquestion)
             return Response(
                 data=self.serializer_class(instance).data, status=status.HTTP_200_OK
             )
@@ -315,7 +319,7 @@ class TeacherMemberExamFtQuestionAPIView(GenericAPIView):
         return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)
 
 
-class TeacherAssignmentCreateAPIView(IsRelativeTeacherMixin, GenericAPIView):
+class TeacherAssignmentAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
     serializer_class = AssignmentRequestSerializer
 
@@ -326,8 +330,8 @@ class TeacherAssignmentCreateAPIView(IsRelativeTeacherMixin, GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            data=AssignmentResponseSerializer(instance=self.assignment).data,
-            status=status.HTTP_201_CREATED,
+            data=AssignmentResponseSerializer(self.assignment).data,
+            status=status.HTTP_200_OK,
         )
 
     def post(self, request, *args, **kwargs) -> AssignmentSerializer:
@@ -348,16 +352,20 @@ class TeacherAssignmentQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
 
     def post(self, request, *args, **kwargs) -> AssignmentFTQuestionSerializer:
         FTQuestions = []
+        print("\n\n\n")
         for question in request.data:
             serializer = self.serializer_class(data=question)
             if serializer.is_valid():
                 FTQuestions.append(
                     FTQuestion(assignment=self.assignment, **serializer.data)
                 )
+                print(FTQuestions)
+                print(serializer.data)
             else:
                 return Response(
                     data=serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
+        print("\n\n\n")
         instances = FTQuestion.objects.bulk_create(FTQuestions)
         return Response(
             data=AssignmentFTQuestionSerializer(instances, many=True).data,
@@ -371,7 +379,7 @@ class TeacherAssignmentQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            data=AssignmentFTQuestionSerializer(self.ftquestion).data,
+            data=AssignmentFTQuestionSerializer(self.assignment_ftquestion).data,
             status=status.HTTP_200_OK,
         )
 
@@ -387,7 +395,7 @@ class TeacherAssignmentFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAP
             )
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            instance = serializer.save(ft_question=self.ftquestion)
+            instance = serializer.save(assignment_ftquestion=self.assignment_ftquestion)
             return Response(
                 data=self.serializer_class(instance).data, status=status.HTTP_200_OK
             )

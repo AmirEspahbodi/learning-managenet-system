@@ -16,7 +16,7 @@ class MemberShipRoles(models.IntegerChoices):
     TEACHING_ASSISTANT = 7, "teaching assistant"
 
 
-class CourseTitle(TimeStampMixin, models.Model):
+class CourseTitle(TimeStampMixin):
     id = models.AutoField(
         primary_key=True, auto_created=True, serialize=False, verbose_name="ID"
     )
@@ -29,7 +29,7 @@ class CourseTitle(TimeStampMixin, models.Model):
         return self.title
 
 
-class Course(TimeStampMixin, models.Model):
+class Course(TimeStampMixin):
     id = models.AutoField(
         primary_key=True,
         auto_created=True,
@@ -75,7 +75,7 @@ class Course(TimeStampMixin, models.Model):
         return self.__str__()
 
 
-class MemberShip(TimeStampMixin, models.Model):
+class MemberShip(TimeStampMixin):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="members")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.PositiveSmallIntegerField(choices=MemberShipRoles.choices)
@@ -101,7 +101,7 @@ class MemberShip(TimeStampMixin, models.Model):
         ]
 
 
-class CourseTime(TimeStampMixin, models.Model):
+class CourseTime(TimeStampMixin):
     course = models.ForeignKey(
         Course, on_delete=models.CASCADE, related_name="course_times"
     )
@@ -129,7 +129,7 @@ class CourseTime(TimeStampMixin, models.Model):
         return f"{self.time_slot} {self.course}"
 
 
-class Session(TimeStampMixin, models.Model):
+class Session(TimeStampMixin):
     course = models.ForeignKey(
         Course, on_delete=models.CASCADE, related_name="sessions"
     )

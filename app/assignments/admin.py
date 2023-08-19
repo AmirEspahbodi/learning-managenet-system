@@ -30,7 +30,7 @@ class FTQuestionInline(admin.TabularInline):
         "title",
         "text",
         "file",
-        "statrt_at",
+        "start_at",
         "end_at",
     )
 
@@ -39,7 +39,7 @@ class FTQuestionInline(admin.TabularInline):
 class PracticeAdmin(admin.ModelAdmin):
     inlines = [FTQuestionInline, MemberTakeAssignmentInline]
     raw_id_fields = ("session",)
-    ordering = ("statrt_at", "end_at")
+    ordering = ("start_at", "end_at")
     list_filter = (
         "session__course__course_title__title",
         "session__course",
@@ -49,7 +49,7 @@ class PracticeAdmin(admin.ModelAdmin):
         "session",
         "assignment_number",
         "title",
-        "statrt_at",
+        "start_at",
         "end_at",
     )
 
@@ -69,6 +69,6 @@ class MemberAssignmentFTQuestionInline(admin.TabularInline):
 class FTQuestionAdmin(admin.ModelAdmin):
     inlines = [MemberAssignmentFTQuestionInline]
     raw_id_fields = ("assignment",)
-    ordering = ("statrt_at", "end_at")
-    list_filter = ("assignment__session__course", "statrt_at", "end_at")
-    list_display = ("assignment", "title", "text", "statrt_at", "end_at")
+    ordering = ("start_at", "end_at")
+    list_filter = ("assignment__session__course", "start_at", "end_at")
+    list_display = ("assignment", "title", "text", "start_at", "end_at")

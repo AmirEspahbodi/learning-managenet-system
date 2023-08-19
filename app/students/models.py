@@ -9,7 +9,7 @@ from core.db.mixins.timestamp import TimeStampMixin
 User = get_user_model()
 
 
-class Student(TimeStampMixin, models.Model):
+class Student(TimeStampMixin):
     user = models.OneToOneField(
         User,
         primary_key=True,
@@ -25,7 +25,7 @@ class Student(TimeStampMixin, models.Model):
         return f"student: {self.user.username} ({self.user.last_name})"
 
 
-class FinancialAids(TimeStampMixin, models.Model):
+class FinancialAids(TimeStampMixin):
     student = models.ForeignKey(
         Student, on_delete=models.CASCADE, related_name="financial_aids"
     )

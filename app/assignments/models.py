@@ -7,7 +7,7 @@ from core.db.mixins.timestamp import TimeStampMixin
 # Create your models here.
 
 
-class Assignment(TimeStampMixin, models.Model):
+class Assignment(TimeStampMixin):
     id = models.AutoField(
         auto_created=True,
         primary_key=True,
@@ -22,14 +22,14 @@ class Assignment(TimeStampMixin, models.Model):
     assignment_number = models.PositiveSmallIntegerField(
         null=True, blank=True, editable=False
     )
-    statrt_at = models.DateTimeField()
+    start_at = models.DateTimeField()
     end_at = models.DateTimeField()
 
     def get_jalali_created_at(self):
         return str(datetime2jalali(self.created_at))[:19]
 
-    def get_jalali_statrt_at(self):
-        return str(datetime2jalali(self.statrt_at))[:19]
+    def get_jalali_start_at(self):
+        return str(datetime2jalali(self.start_at))[:19]
 
     def get_jalali_end_at(self):
         return str(datetime2jalali(self.end_at))[:19]
@@ -41,7 +41,7 @@ class Assignment(TimeStampMixin, models.Model):
         db_table_comment = "assignment for each session of course"
 
 
-class MemberTakeAssignment(TimeStampMixin, models.Model):
+class MemberTakeAssignment(TimeStampMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assignment = models.ForeignKey(
         Assignment, on_delete=models.CASCADE, related_name="assignment_members"
@@ -68,14 +68,14 @@ class MemberTakeAssignment(TimeStampMixin, models.Model):
         db_table_comment = "a table betwen student takes and assignment. It shows that the student participated in the assignment"
 
 
-class FTQuestion(TimeStampMixin, models.Model):
+class FTQuestion(TimeStampMixin):
     assignment = models.ForeignKey(
         Assignment, on_delete=models.CASCADE, related_name="ftquestions"
     )
     title = models.CharField(max_length=255, null=True, blank=True)
     text = models.TextField(null=True, blank=True)
     file = models.FileField(upload_to="assignment/questions/", null=True, blank=True)
-    statrt_at = models.DateTimeField()
+    start_at = models.DateTimeField()
     end_at = models.DateTimeField()
 
     class Meta:
@@ -86,17 +86,19 @@ class FTQuestion(TimeStampMixin, models.Model):
         return f"f/t question:  {self.assignment} {self.title[:50]}"
 
 
-class FTQuestionAnswer(TimeStampMixin, models.Model):
+class FTQuestionAnswer(TimeStampMixin):
     ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
     answer_text = models.TextField(null=True, blank=True)
-    answer_file = models.FileField(upload_to="assignment/teacher/answers/")
+    answer_file = models.FileField(
+        upload_to="assignment/teacher/answers/", null=True, blank=True
+    )
 
     class Meta:
         db_table = "assignments_ftquestion_answer"
         db_table_comment = "answer of the file/text type questions"
 
 
-class MemberAssignmentFTQuestion(TimeStampMixin, models.Model):
+class MemberAssignmentFTQuestion(TimeStampMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     member_take_assignment = models.ForeignKey(
         MemberTakeAssignment,

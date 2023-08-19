@@ -1,1 +1,1 @@
-python ..\manage.py runscript startup
+python .\app\manage.py runscript startup

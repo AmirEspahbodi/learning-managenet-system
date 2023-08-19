@@ -6,8 +6,8 @@ from rest_framework.settings import api_settings
 class TokenSettings:
     SECURE_HASH_ALGORITHM = sha3_512
     AUTH_TOKEN_CHARACTER_LENGTH = 64
-    TOKEN_TTL = timedelta(hours=10)
-    LAST_USE_TO_EXPIRY = timedelta(hours=1)
+    TOKEN_TTL = timedelta(days=10)
+    LAST_USE_TO_EXPIRY = timedelta(days=10)
     TOKEN_LIMIT_PER_USER = 10
     AUTO_REFRESH = False
     MIN_REFRESH_INTERVAL = 60

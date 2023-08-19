@@ -21,7 +21,7 @@ class Days_Of_Week(models.IntegerChoices):
 
 
 # Create your models here.
-class Semester(TimeStampMixin, models.Model):
+class Semester(TimeStampMixin):
     semester_id = models.PositiveIntegerField(primary_key=True)
     year = models.CharField(
         max_length=10,
@@ -37,7 +37,7 @@ class Semester(TimeStampMixin, models.Model):
         return self.semester_id
 
 
-class Room(TimeStampMixin, models.Model):
+class Room(TimeStampMixin):
     room_number = models.SmallAutoField(
         auto_created=True,
         primary_key=True,
@@ -50,7 +50,7 @@ class Room(TimeStampMixin, models.Model):
         return f"{self.room_title}"
 
 
-class TimeSlot(TimeStampMixin, models.Model):
+class TimeSlot(TimeStampMixin):
     id = models.AutoField(
         auto_created=True,
         primary_key=True,

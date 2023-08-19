@@ -20,7 +20,7 @@ class ExamFTQuestionSerializer(serializers.ModelSerializer):
             "title",
             "text",
             "file",
-            "statrt_at",
+            "start_at",
             "end_at",
         )
 
@@ -37,7 +37,7 @@ class ExamFTQuestionSerializer(serializers.ModelSerializer):
             title=validated_data["title"],
             text=validated_data.get("text"),
             file=validated_data.get("file"),
-            statrt_at=validated_data["statrt_at"],
+            start_at=validated_data["start_at"],
             end_at=validated_data["end_at"],
         )
         return exam
@@ -53,7 +53,7 @@ class ExamSerializer(serializers.ModelSerializer):
             "description",
             "exam_number",
             "created_at",
-            "statrt_at",
+            "start_at",
             "end_at",
         )
 
@@ -75,7 +75,7 @@ class ExamResponseSerializer(serializers.ModelSerializer):
             "description",
             "exam_number",
             "created_at",
-            "statrt_at",
+            "start_at",
             "end_at",
             "ftquestions",
         )
@@ -92,7 +92,7 @@ class ExamRequestSerializer(serializers.ModelSerializer):
         fields = (
             "title",
             "description",
-            "statrt_at",
+            "start_at",
             "end_at",
         )
 
@@ -106,7 +106,7 @@ class ExamRequestSerializer(serializers.ModelSerializer):
             title=validated_data["title"],
             exam_number=exam_number,
             description=validated_data.get("description"),
-            statrt_at=validated_data["statrt_at"],
+            start_at=validated_data["start_at"],
             end_at=validated_data["end_at"],
         )
         return exam
@@ -123,11 +123,18 @@ class ExamFTQuestionAnswerSerializer(serializers.ModelSerializer):
             "answer_file",
         )
 
+    def validate(self, attrs):
+        answer_text = attrs.get("answer_text")
+        answer_file = attrs.get("answer_file")
+        if answer_file is None and answer_text is None:
+            raise ValidationError(detail="either file or text must be given")
+        return attrs
+
     def create(self, validated_data):
-        ft_question_answer = Exam.objects.create(
-            ft_question=validated_data["ftquestion"],
-            statrt_at=validated_data["answer_text"],
-            end_at=validated_data["answer_file"],
+        ft_question_answer = FTQuestionAnswer.objects.create(
+            ft_question=validated_data["exam_ftquestion"],
+            start_at=validated_data.get("answer_text"),
+            end_at=validated_data.get("answer_file"),
         )
         return ft_question_answer
 
@@ -142,15 +149,15 @@ class ExamFTQuestionSerializer(serializers.ModelSerializer):
             "title",
             "text",
             "file",
-            "statrt_at",
+            "start_at",
             "end_at",
             "ftquestion_answers",
         )
 
     def create(self, validated_data):
         ft_question_answer = Exam.objects.create(
-            ft_question=validated_data["ftquestion"],
-            statrt_at=validated_data["answer_text"],
+            ft_question=validated_data["exam_ftquestion"],
+            start_at=validated_data["answer_text"],
             end_at=validated_data["answer_file"],
         )
         return ft_question_answer
