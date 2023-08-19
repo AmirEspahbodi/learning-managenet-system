@@ -7,7 +7,15 @@ from .views import (
     TeacherExamCreateAPIView,
     TeacherExamQuestionAPIView,
     TeacherExamFtQuestionAnswerAPIView,
+    TeacherGetMemberExamAPIView,
+    TeacherListMemberExamAPIView,
     TeacherMemberExamFtQuestionAPIView,
+    TeacherAssignmentCreateAPIView,
+    TeacherAssignmentQuestionAPIView,
+    TeacherAssignmentFtQuestionAnswerAPIView,
+    TeacherGetMemberAssignmentAPIView,
+    TeacherListMemberAssignmentAPIView,
+    TeacherMemberAssignmentFtQuestionAPIView,
 )
 
 
@@ -39,6 +47,16 @@ urlpatterns = [
         name="exam_get",
     ),
     path(
+        "exam/<int:exam_id>/members/",
+        TeacherListMemberExamAPIView.as_view(),
+        name="member_exam_list",
+    ),
+    path(
+        "exam/members/<int:member_exam_id>/",
+        TeacherGetMemberExamAPIView.as_view(),
+        name="member_exam_get",
+    ),
+    path(
         "exam/<int:exam_id>/ftquestion/create/",
         TeacherExamQuestionAPIView.as_view(),
         name="exam_ftquestion_create",
@@ -57,5 +75,40 @@ urlpatterns = [
         "exam/ftquestion/member/answer/<int:member_exam_ftquestion_id>/score/",
         TeacherMemberExamFtQuestionAPIView.as_view(),
         name="exam_ftquestion_member_answer_score",
+    ),
+    path(
+        "assignment/<int:exam_id>/",
+        TeacherAssignmentCreateAPIView.as_view(),
+        name="assignment_get",
+    ),
+    path(
+        "assignment/<int:exam_id>/members/",
+        TeacherListMemberAssignmentAPIView.as_view(),
+        name="member_assignment_list",
+    ),
+    path(
+        "assignment/members/<int:member_exam_id>/",
+        TeacherGetMemberAssignmentAPIView.as_view(),
+        name="member_assignment_get",
+    ),
+    path(
+        "assignment/<int:exam_id>/ftquestion/create/",
+        TeacherAssignmentQuestionAPIView.as_view(),
+        name="assignment_ftquestion_create",
+    ),
+    path(
+        "assignment/ftquestion/<int:exam_ftquestion_id>/",
+        TeacherAssignmentQuestionAPIView.as_view(),
+        name="assignment_ftquestion_get",
+    ),
+    path(
+        "assignment/ftquestion/<int:exam_ftquestion_id>/answer/create/",
+        TeacherAssignmentFtQuestionAnswerAPIView.as_view(),
+        name="assignment_ftquestion_answer_create",
+    ),
+    path(
+        "assignment/ftquestion/member/answer/<int:member_exam_ftquestion_id>/score/",
+        TeacherMemberAssignmentFtQuestionAPIView.as_view(),
+        name="assignment_ftquestion_member_answer_score",
     ),
 ]

@@ -99,6 +99,7 @@ class MemberExamFTQuestion(TimeStampMixin, models.Model):
     member_take_exam = models.ForeignKey(
         MemberTakeExam,
         on_delete=models.CASCADE,
+        related_name="member_take_exam_ftquestions",
     )
     ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)

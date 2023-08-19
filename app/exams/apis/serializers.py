@@ -6,6 +6,7 @@ from ..models import (
     FTQuestionAnswer,
     FTQuestion,
     MemberExamFTQuestion,
+    MemberTakeExam,
 )
 
 
@@ -169,3 +170,11 @@ class MemberExamFTQuestionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+
+class MemberTakeExamSerilizer(serializers.ModelSerializer):
+    member_take_exam_ftquestions = MemberExamFTQuestionSerializer()
+
+    class Config:
+        model = MemberTakeExam
+        fields = ("last_visit", "finish_at", "score", "member_take_exam_ftquestions")

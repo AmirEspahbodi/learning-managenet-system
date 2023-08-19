@@ -9,10 +9,10 @@ from rest_framework import status, exceptions
 from rest_framework.generics import GenericAPIView
 
 from .serialisers import FinancialAidsResultSerializer
-from courses.models import Session, Course, MemberShip, MemberShipRoles
+from courses.models import Session, MemberShip, MemberShipRoles
 from courses.apis.serializers import SessionSerializer, CourseSerializer
 from courses.permissions import IsTeacher, IsRelativeTeacherMixin
-from students.models import Student, FinancialAids
+from students.models import FinancialAids
 from students.apis.serializers import ShowFinancialAids
 from exams.apis.serializers import (
     ExamRequestSerializer,
@@ -23,6 +23,7 @@ from exams.apis.serializers import (
     ExamFTQuestionSerializer,
     MemberExamFTQuestionSerializer,
     MemberExamFTQuestionScoreSerializer,
+    MemberTakeExamSerilizer,
 )
 from exams.models import FTQuestion, MemberExamFTQuestion, MemberTakeExam
 from assignments.apis.serializers import (
@@ -34,6 +35,7 @@ from assignments.apis.serializers import (
     AssignmentFTQuestionSerializer,
     MemberAssignmentFTQuestionSerializer,
     MemberAssignmentFTQuestionScoreSerializer,
+    MemberTakeAssignmentSerilizer,
 )
 from assignments.models import (
     FTQuestion,
@@ -201,6 +203,7 @@ class TeacherExamQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
 
 class TeacherExamFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView):
     serializer_class = ExamFTQuestionAnswerSerializer
+    permission_classes = [IsTeacher]
 
     def post(self, request, *args, **kwargs):
         if "exam_ftquestion_id" not in kwargs:
@@ -220,7 +223,21 @@ class TeacherExamFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView)
             )
 
 
-class TeacherMemberExamAPIView(GenericAPIView):
+class TeacherListMemberExamAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request, *args, **kwargs):
+        member_exams = MemberTakeExam.objects.filter(exam=self.exam)
+
+        return Response(
+            data=MemberTakeExamSerilizer(member_exams, many=True).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class TeacherGetMemberExamAPIView(GenericAPIView):
+    permission_classes = [IsTeacher]
+
     def get(self, request, *args, **kwargs):
         member_exam_id = kwargs.get("member_exam_id")
         try:
@@ -236,6 +253,14 @@ class TeacherMemberExamAPIView(GenericAPIView):
             role=MemberShipRoles.TEACHER,
         ).exists():
             raise exceptions.PermissionDenied()
+        try:
+            member_exam = MemberTakeExam.objects.get(id=member_exam_id)
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        return Response(
+            data=MemberTakeExamSerilizer(member_exam).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 class TeacherMemberExamFtQuestionAPIView(GenericAPIView):
@@ -372,24 +397,6 @@ class TeacherAssignmentFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAP
             )
 
 
-class TeacherMemberAssignmentAPIView(GenericAPIView):
-    def get(self, request, *args, **kwargs):
-        member_assignment_id = kwargs.get("member_assignment_id")
-        try:
-            member_take_assignment = MemberTakeAssignment.objects.select_related(
-                "assignment__session"
-            ).get(id=member_assignment_id)
-        except ObjectDoesNotExist:
-            raise exceptions.NotFound()
-        member_course = member_take_assignment.assignment.session.course
-        if not MemberShip.objects.filter(
-            course=member_course,
-            user=request.user.teacher_user,
-            role=MemberShipRoles.TEACHER,
-        ).exists():
-            raise exceptions.PermissionDenied()
-
-
 class TeacherMemberAssignmentFtQuestionAPIView(GenericAPIView):
     permission_classes = [IsTeacher]
     serializer_class = MemberAssignmentFTQuestionSerializer
@@ -448,3 +455,45 @@ class TeacherMemberAssignmentFtQuestionAPIView(GenericAPIView):
         else:
             return Response(data=serilizer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)
+
+
+class TeacherListMemberAssignmentAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request, *args, **kwargs):
+        member_assignments = MemberTakeAssignment.objects.filter(
+            assignment=self.assignment
+        )
+
+        return Response(
+            data=MemberTakeAssignmentSerilizer(member_assignments, many=True).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class TeacherGetMemberAssignmentAPIView(GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request, *args, **kwargs):
+        member_exam_id = kwargs.get("member_exam_id")
+        try:
+            member_take_assignment = MemberTakeAssignment.objects.select_related(
+                "assignment__session"
+            ).get(id=member_exam_id)
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        member_course = member_take_assignment.assignment.session.course
+        if not MemberShip.objects.filter(
+            course=member_course,
+            user=request.user.teacher_user,
+            role=MemberShipRoles.TEACHER,
+        ).exists():
+            raise exceptions.PermissionDenied()
+        try:
+            member_assignment = MemberTakeAssignment.objects.get(id=member_exam_id)
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        return Response(
+            data=MemberTakeAssignmentSerilizer(member_assignment).data,
+            status=status.HTTP_200_OK,
+        )
