@@ -19,8 +19,8 @@ class ExamFTQuestionSerializer(serializers.ModelSerializer):
             "title",
             "text",
             "file",
-            "start_datetime",
-            "end_datetime",
+            "statrt_at",
+            "end_at",
         )
 
     def validate(self, attrs):
@@ -36,8 +36,8 @@ class ExamFTQuestionSerializer(serializers.ModelSerializer):
             title=validated_data["title"],
             text=validated_data.get("text"),
             file=validated_data.get("file"),
-            start_datetime=validated_data["start_datetime"],
-            end_datetime=validated_data["end_datetime"],
+            statrt_at=validated_data["statrt_at"],
+            end_at=validated_data["end_at"],
         )
         return exam
 
@@ -51,9 +51,9 @@ class ExamSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "exam_number",
-            "create_datetime",
-            "start_datetime",
-            "end_datetime",
+            "created_at",
+            "statrt_at",
+            "end_at",
         )
 
     def to_representation(self, instance):
@@ -73,9 +73,9 @@ class ExamResponseSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "exam_number",
-            "create_datetime",
-            "start_datetime",
-            "end_datetime",
+            "created_at",
+            "statrt_at",
+            "end_at",
             "ftquestions",
         )
 
@@ -91,8 +91,8 @@ class ExamRequestSerializer(serializers.ModelSerializer):
         fields = (
             "title",
             "description",
-            "start_datetime",
-            "end_datetime",
+            "statrt_at",
+            "end_at",
         )
 
     def create(self, validated_data):
@@ -105,13 +105,13 @@ class ExamRequestSerializer(serializers.ModelSerializer):
             title=validated_data["title"],
             exam_number=exam_number,
             description=validated_data.get("description"),
-            start_datetime=validated_data["start_datetime"],
-            end_datetime=validated_data["end_datetime"],
+            statrt_at=validated_data["statrt_at"],
+            end_at=validated_data["end_at"],
         )
         return exam
 
 
-class FTQuestionAnswerSerializer(serializers.ModelSerializer):
+class ExamFTQuestionAnswerSerializer(serializers.ModelSerializer):
     id = fields.IntegerField(required=False)
 
     class Meta:
@@ -125,14 +125,14 @@ class FTQuestionAnswerSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ft_question_answer = Exam.objects.create(
             ft_question=validated_data["ftquestion"],
-            start_datetime=validated_data["answer_text"],
-            end_datetime=validated_data["answer_file"],
+            statrt_at=validated_data["answer_text"],
+            end_at=validated_data["answer_file"],
         )
         return ft_question_answer
 
 
-class FTQuestionSerializer(serializers.ModelSerializer):
-    ftquestion_answers = FTQuestionAnswerSerializer
+class ExamFTQuestionSerializer(serializers.ModelSerializer):
+    ftquestion_answers = ExamFTQuestionAnswerSerializer
 
     class Meta:
         model = FTQuestion
@@ -141,16 +141,16 @@ class FTQuestionSerializer(serializers.ModelSerializer):
             "title",
             "text",
             "file",
-            "start_datetime",
-            "end_datetime",
+            "statrt_at",
+            "end_at",
             "ftquestion_answers",
         )
 
     def create(self, validated_data):
         ft_question_answer = Exam.objects.create(
             ft_question=validated_data["ftquestion"],
-            start_datetime=validated_data["answer_text"],
-            end_datetime=validated_data["answer_file"],
+            statrt_at=validated_data["answer_text"],
+            end_at=validated_data["answer_file"],
         )
         return ft_question_answer
 

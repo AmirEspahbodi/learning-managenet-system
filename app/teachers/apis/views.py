@@ -19,12 +19,27 @@ from exams.apis.serializers import (
     ExamSerializer,
     ExamFTQuestionSerializer,
     ExamResponseSerializer,
-    FTQuestionAnswerSerializer,
-    FTQuestionSerializer,
+    ExamFTQuestionAnswerSerializer,
+    ExamFTQuestionSerializer,
     MemberExamFTQuestionSerializer,
     MemberExamFTQuestionScoreSerializer,
 )
 from exams.models import FTQuestion, MemberExamFTQuestion, MemberTakeExam
+from assignments.apis.serializers import (
+    AssignmentRequestSerializer,
+    AssignmentSerializer,
+    AssignmentFTQuestionSerializer,
+    AssignmentResponseSerializer,
+    AssignmentFTQuestionAnswerSerializer,
+    AssignmentFTQuestionSerializer,
+    MemberAssignmentFTQuestionSerializer,
+    MemberAssignmentFTQuestionScoreSerializer,
+)
+from assignments.models import (
+    FTQuestion,
+    MemberAssignmentFTQuestion,
+    MemberTakeAssignment,
+)
 
 User = get_user_model()
 
@@ -179,12 +194,13 @@ class TeacherExamQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            data=FTQuestionSerializer(self.ftquestion).data, status=status.HTTP_200_OK
+            data=ExamFTQuestionSerializer(self.ftquestion).data,
+            status=status.HTTP_200_OK,
         )
 
 
 class TeacherExamFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView):
-    serializer_class = FTQuestionAnswerSerializer
+    serializer_class = ExamFTQuestionAnswerSerializer
 
     def post(self, request, *args, **kwargs):
         if "exam_ftquestion_id" not in kwargs:
@@ -269,6 +285,166 @@ class TeacherMemberExamFtQuestionAPIView(GenericAPIView):
         if serilizer.is_valid():
             memberexamftquestion.score = serilizer.data["score"]
             memberexamftquestion.save()
+        else:
+            return Response(data=serilizer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)
+
+
+class TeacherAssignmentCreateAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    permission_classes = [IsTeacher]
+    serializer_class = AssignmentRequestSerializer
+
+    def get(self, request, *args, **kwargs) -> AssignmentSerializer:
+        if "assignment_id" not in kwargs:
+            return Response(
+                data={"this paramter requered": "assignment_id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data=AssignmentResponseSerializer(instance=self.assignment).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def post(self, request, *args, **kwargs) -> AssignmentSerializer:
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            instance = serializer.save(session=self.session)
+            return Response(
+                data=AssignmentSerializer(instance).data,
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TeacherAssignmentQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    serializer_class = AssignmentFTQuestionSerializer
+    permission_classes = [IsTeacher]
+
+    def post(self, request, *args, **kwargs) -> AssignmentFTQuestionSerializer:
+        FTQuestions = []
+        for question in request.data:
+            serializer = self.serializer_class(data=question)
+            if serializer.is_valid():
+                FTQuestions.append(
+                    FTQuestion(assignment=self.assignment, **serializer.data)
+                )
+            else:
+                return Response(
+                    data=serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                )
+        instances = FTQuestion.objects.bulk_create(FTQuestions)
+        return Response(
+            data=AssignmentFTQuestionSerializer(instances, many=True).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request, *args, **kwargs):
+        if "assignment_ftquestion_id" not in kwargs:
+            return Response(
+                data={"detail": "not found assignment ftquestion id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            data=AssignmentFTQuestionSerializer(self.ftquestion).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class TeacherAssignmentFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    serializer_class = AssignmentFTQuestionAnswerSerializer
+
+    def post(self, request, *args, **kwargs):
+        if "assignment_ftquestion_id" not in kwargs:
+            return Response(
+                data={"detail": "not found assignment ftquestion id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            instance = serializer.save(ft_question=self.ftquestion)
+            return Response(
+                data=self.serializer_class(instance).data, status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                data={"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class TeacherMemberAssignmentAPIView(GenericAPIView):
+    def get(self, request, *args, **kwargs):
+        member_assignment_id = kwargs.get("member_assignment_id")
+        try:
+            member_take_assignment = MemberTakeAssignment.objects.select_related(
+                "assignment__session"
+            ).get(id=member_assignment_id)
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        member_course = member_take_assignment.assignment.session.course
+        if not MemberShip.objects.filter(
+            course=member_course,
+            user=request.user.teacher_user,
+            role=MemberShipRoles.TEACHER,
+        ).exists():
+            raise exceptions.PermissionDenied()
+
+
+class TeacherMemberAssignmentFtQuestionAPIView(GenericAPIView):
+    permission_classes = [IsTeacher]
+    serializer_class = MemberAssignmentFTQuestionSerializer
+
+    def get(self, request, *args, **kwargs):
+        member_assignment_ftquestion_id = kwargs.get("member_assignment_ftquestion_id")
+        try:
+            memberassignmentftquestion = (
+                MemberAssignmentFTQuestion.objects.select_related(
+                    "member_take_assignment"
+                )
+                .select_related("member_take_assignment__assignment")
+                .get(id=member_assignment_ftquestion_id)
+            )
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        member_course = (
+            memberassignmentftquestion.member_take_assignment.assignment.session.course
+        )
+        if not MemberShip.objects.filter(
+            course=member_course,
+            user=request.user.teacher_user,
+            role=MemberShipRoles.TEACHER,
+        ).exists():
+            raise exceptions.PermissionDenied()
+        return Response(
+            data=MemberAssignmentFTQuestionSerializer(memberassignmentftquestion).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def post(self, request, *args, **kwargs):
+        member_assignment_ftquestion_id = kwargs.get("member_assignment_ftquestion_id")
+        try:
+            memberassignmentftquestion = (
+                MemberAssignmentFTQuestion.objects.select_related(
+                    "member_take_assignment"
+                )
+                .select_related("member_take_assignment__assignment")
+                .get(id=member_assignment_ftquestion_id)
+            )
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        member_course = (
+            memberassignmentftquestion.member_take_assignment.assignment.session.course
+        )
+        if not MemberShip.objects.filter(
+            course=member_course,
+            user=request.user.teacher_user,
+            role=MemberShipRoles.TEACHER,
+        ).exists():
+            raise exceptions.PermissionDenied()
+        serilizer = MemberAssignmentFTQuestionScoreSerializer(data=request.data)
+        if serilizer.is_valid():
+            memberassignmentftquestion.score = serilizer.data["score"]
+            memberassignmentftquestion.save()
         else:
             return Response(data=serilizer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)

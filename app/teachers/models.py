@@ -1,18 +1,19 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from core.db.mixins.timestamp import TimeStampMixin
 
 # Create your models here.
 
 User = get_user_model()
 
 
-class Teacher(models.Model):
+class Teacher(TimeStampMixin, models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         primary_key=True,
         related_name="teacher_user",
-        db_index=True
+        db_index=True,
     )
     experience = models.PositiveSmallIntegerField(blank=True, null=True)
 
@@ -20,10 +21,12 @@ class Teacher(models.Model):
         return self.user
 
     def __str__(self):
-        return "teacher "+str(self.user.first_name)+" "+str(str(self.user.last_name))
+        return (
+            "teacher " + str(self.user.first_name) + " " + str(str(self.user.last_name))
+        )
 
 
-class TeacherPublished(models.Model):
+class TeacherPublished(TimeStampMixin, models.Model):
     teacher = models.ForeignKey(
         Teacher,
         on_delete=models.CASCADE,
@@ -32,22 +35,19 @@ class TeacherPublished(models.Model):
     publisher = models.CharField(max_length=300)
 
     def __str__(self):
-        return str(self.published[:50]+self.publisher[:50])
+        return str(self.published[:50] + self.publisher[:50])
 
     class Meta:
         db_table = "teachers_teacher_published"
 
 
-class TeacherEducation(models.Model):
-    teacher = models.ForeignKey(
-        Teacher,
-        on_delete=models.CASCADE
-    )
+class TeacherEducation(TimeStampMixin, models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     education = models.CharField(max_length=300)
     university = models.CharField(max_length=300)
 
     def __str__(self):
-        return str(self.education[:50]+self.university[:50])
+        return str(self.education[:50] + self.university[:50])
 
     class Meta:
         db_table = "teachers_teacher_education"

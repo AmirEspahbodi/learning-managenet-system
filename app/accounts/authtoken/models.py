@@ -13,17 +13,12 @@ User = settings.AUTH_USER_MODEL
 
 
 class AuthTokenManager(models.Manager):
-    def create(
-        self,
-        user,
-        prefix=token_settings.TOKEN_PREFIX
-    ):
+    def create(self, user, prefix=token_settings.TOKEN_PREFIX):
         token = prefix + crypto.create_token_string()
         digest = crypto.hash_token(token)
         instance = super(AuthTokenManager, self).create(
-            token_key=token[:CONSTANTS.TOKEN_KEY_LENGTH],
-            digest=digest,
-            user=user)
+            token_key=token[: CONSTANTS.TOKEN_KEY_LENGTH], digest=digest, user=user
+        )
 
         return instance, token
 
@@ -33,25 +28,26 @@ def expiry_set():
 
 
 class AuthToken(models.Model):
-
     objects = AuthTokenManager()
 
-    digest = models.CharField(
-        max_length=CONSTANTS.DIGEST_LENGTH, primary_key=True)
+    digest = models.CharField(max_length=CONSTANTS.DIGEST_LENGTH, primary_key=True)
 
-    token_key = models.CharField(
-        max_length=CONSTANTS.TOKEN_KEY_LENGTH,
-        db_index=True)
+    token_key = models.CharField(max_length=CONSTANTS.TOKEN_KEY_LENGTH, db_index=True)
 
-    user = models.ForeignKey(User, null=False, blank=False,
-                             related_name='auth_token_set', on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        null=False,
+        blank=False,
+        related_name="auth_token_set",
+        on_delete=models.CASCADE,
+    )
 
     last_use = models.DateTimeField(auto_now=True)
 
     expiry = models.DateTimeField(default=expiry_set)
 
     def __str__(self):
-        return '%s : %s' % (self.digest, self.user)
+        return "%s : %s" % (self.digest, self.user)
 
     class Meta:
         db_table = "authtoken_auth_token"
@@ -59,9 +55,7 @@ class AuthToken(models.Model):
 
 class AuthTokenInformation(models.Model):
     authToken = models.OneToOneField(
-        AuthToken,
-        primary_key=True,
-        on_delete=models.CASCADE
+        AuthToken, primary_key=True, on_delete=models.CASCADE
     )
     ip_address = models.GenericIPAddressField(
         _("The IP address of this session"),
