@@ -151,7 +151,7 @@ class AssignmentFTQuestionAnswerSerializer(serializers.ModelSerializer):
 
 
 class FTQuestionSerializer(serializers.ModelSerializer):
-    ftquestion_answers = FTQuestionAnswerSerializer
+    ftquestion_answers = AssignmentFTQuestionAnswerSerializer
 
     class Meta:
         model = FTQuestion
