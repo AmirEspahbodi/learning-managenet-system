@@ -12,6 +12,7 @@ from exams.models import (
     FTQuestion as ExamFTQuestion,
     FTQuestionAnswer as ExamFTQuestionAnswer,
 )
+from contents.models import Content
 
 
 class IsStudent(IsEmailVerified):
@@ -190,6 +191,14 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
                 self.assignment = self.assignment_ftquestion.assignment
                 self.session = self.assignment.session
                 self.course = self.session.course
+
+            elif "content_id" in kwargs:
+                self.content = Content.objects.select_related("session").get(
+                    id=kwargs.get("content_id")
+                )
+                self.session = self.content.session
+                self.course = self.session.course
+
         except ObjectDoesNotExist:
             raise exceptions.NotFound()
         try:

@@ -16,6 +16,7 @@ from .views import (
     TeacherGetMemberAssignmentAPIView,
     TeacherListMemberAssignmentAPIView,
     TeacherMemberAssignmentFtQuestionAPIView,
+    TeacherContentAPIView,
 )
 
 
@@ -125,5 +126,15 @@ urlpatterns = [
         "assignment/ftquestion/member/answer/<int:member_assignment_ftquestion_id>/score/",
         TeacherMemberAssignmentFtQuestionAPIView.as_view(),
         name="assignment_ftquestion_member_answer_score",
+    ),
+    path(
+        "session/<int:session_id>/content/create/",
+        TeacherContentAPIView.as_view(),
+        name="content_create",
+    ),
+    path(
+        "content/<int:content_id>/",
+        TeacherContentAPIView.as_view(),
+        name="content",
     ),
 ]

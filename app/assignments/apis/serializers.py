@@ -110,6 +110,9 @@ class AssignmentRequestSerializer(serializers.ModelSerializer):
 
 
 class AssignmentFTQuestionAnswerUpdateSerializer(serializers.ModelSerializer):
+    answer_text = fields.CharField(required=False)
+    answer_file = fields.FileField(required=False)
+
     class Meta:
         model = FTQuestionAnswer
         fields = (
@@ -145,6 +148,25 @@ class AssignmentFTQuestionAnswerSerializer(serializers.ModelSerializer):
         return ft_question_answer
 
 
+class AssignmentFTQuestionRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "title",
+            "text",
+            "file",
+            "start_at",
+            "end_at",
+        )
+
+    def validate(self, attrs):
+        file = attrs.get("file")
+        text = attrs.get("text")
+        if file is None and text is None:
+            raise ValidationError(detail="either file or text must be given")
+        return attrs
+
+
 class AssignmentFTQuestionSerializer(serializers.ModelSerializer):
     id = fields.IntegerField(required=False)
     ftquestion_answers = AssignmentFTQuestionAnswerSerializer(many=True)
@@ -167,17 +189,6 @@ class AssignmentFTQuestionSerializer(serializers.ModelSerializer):
         if file is None and text is None:
             raise ValidationError(detail="either file or text must be given")
         return attrs
-
-    def create(self, validated_data):
-        assignment = Assignment.objects.create(
-            assignment=validated_data["assignment"],
-            title=validated_data["title"],
-            text=validated_data.get("text"),
-            file=validated_data.get("file"),
-            start_at=validated_data["start_at"],
-            end_at=validated_data["end_at"],
-        )
-        return assignment
 
 
 class AssignmentResponseSerializer(serializers.ModelSerializer):

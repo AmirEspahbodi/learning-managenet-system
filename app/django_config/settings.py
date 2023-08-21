@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "trs",
     "assignments",
     "exams",
+    "contents",
 ]
 
 

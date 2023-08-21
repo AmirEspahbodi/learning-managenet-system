@@ -100,6 +100,9 @@ class ExamFTQuestionAnswerSerializer(serializers.ModelSerializer):
 
 
 class ExamFTQuestionAnswerUpdateSerializer(serializers.ModelSerializer):
+    answer_text = fields.CharField(required=False)
+    answer_file = fields.FileField(required=False)
+
     class Meta:
         model = FTQuestionAnswer
         fields = (

@@ -1,4 +1,3 @@
-import uuid
 from django.db import models
 from courses.models import Session, MemberShip
 from jalali_date import datetime2jalali
@@ -38,7 +37,12 @@ class Exam(TimeStampMixin):
 
 
 class MemberTakeExam(TimeStampMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.AutoField(
+        auto_created=True,
+        primary_key=True,
+        serialize=False,
+        verbose_name="ID",
+    )
     exam = models.ForeignKey(
         Exam, on_delete=models.CASCADE, related_name="exam_members"
     )
@@ -95,7 +99,12 @@ class FTQuestionAnswer(TimeStampMixin):
 
 
 class MemberExamFTQuestion(TimeStampMixin):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.AutoField(
+        auto_created=True,
+        primary_key=True,
+        serialize=False,
+        verbose_name="ID",
+    )
     member_take_exam = models.ForeignKey(
         MemberTakeExam,
         on_delete=models.CASCADE,
