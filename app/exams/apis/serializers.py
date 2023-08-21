@@ -10,39 +10,6 @@ from ..models import (
 )
 
 
-class ExamFTQuestionSerializer(serializers.ModelSerializer):
-    id = fields.IntegerField(required=False)
-
-    class Meta:
-        model = FTQuestion
-        fields = (
-            "id",
-            "title",
-            "text",
-            "file",
-            "start_at",
-            "end_at",
-        )
-
-    def validate(self, attrs):
-        file = attrs.get("file")
-        text = attrs.get("text")
-        if file is None and text is None:
-            raise ValidationError(detail="either file or text must be given")
-        return attrs
-
-    def create(self, validated_data):
-        exam = Exam.objects.create(
-            exam=validated_data["exam"],
-            title=validated_data["title"],
-            text=validated_data.get("text"),
-            file=validated_data.get("file"),
-            start_at=validated_data["start_at"],
-            end_at=validated_data["end_at"],
-        )
-        return exam
-
-
 class ExamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exam
@@ -55,29 +22,6 @@ class ExamSerializer(serializers.ModelSerializer):
             "created_at",
             "start_at",
             "end_at",
-        )
-
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-
-        return response
-
-
-class ExamResponseSerializer(serializers.ModelSerializer):
-    ftquestions = ExamFTQuestionSerializer(many=True)
-
-    class Meta:
-        model = Exam
-        fields = (
-            "id",
-            "session",
-            "title",
-            "description",
-            "exam_number",
-            "created_at",
-            "start_at",
-            "end_at",
-            "ftquestions",
         )
 
     def to_representation(self, instance):
@@ -112,6 +56,22 @@ class ExamRequestSerializer(serializers.ModelSerializer):
         return exam
 
 
+class ExamRequestUpdateSerializer(serializers.ModelSerializer):
+    title = fields.CharField(required=False)
+    description = fields.CharField(required=False)
+    start_at = fields.DateTimeField(required=False)
+    end_at = fields.DateTimeField(required=False)
+
+    class Meta:
+        model = Exam
+        fields = (
+            "title",
+            "description",
+            "start_at",
+            "end_at",
+        )
+
+
 class ExamFTQuestionAnswerSerializer(serializers.ModelSerializer):
     id = fields.IntegerField(required=False)
 
@@ -133,18 +93,40 @@ class ExamFTQuestionAnswerSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ft_question_answer = FTQuestionAnswer.objects.create(
             ft_question=validated_data["exam_ftquestion"],
-            start_at=validated_data.get("answer_text"),
-            end_at=validated_data.get("answer_file"),
+            answer_text=validated_data.get("answer_text"),
+            answer_file=validated_data.get("answer_file"),
         )
         return ft_question_answer
 
 
+class ExamFTQuestionAnswerUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FTQuestionAnswer
+        fields = (
+            "answer_text",
+            "answer_file",
+        )
+
+
+class ExamFTQuestionRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "title",
+            "text",
+            "file",
+            "start_at",
+            "end_at",
+        )
+
+
 class ExamFTQuestionSerializer(serializers.ModelSerializer):
-    ftquestion_answers = ExamFTQuestionAnswerSerializer
+    ftquestion_answers = ExamFTQuestionAnswerSerializer(many=True)
 
     class Meta:
         model = FTQuestion
         fields = (
+            "id",
             "exam",
             "title",
             "text",
@@ -161,6 +143,24 @@ class ExamFTQuestionSerializer(serializers.ModelSerializer):
             end_at=validated_data["answer_file"],
         )
         return ft_question_answer
+
+
+class ExamFTQuestionUpdateSerializer(serializers.ModelSerializer):
+    title = fields.CharField(required=False)
+    text = fields.CharField(required=False)
+    file = fields.FileField(required=False)
+    start_at = fields.DateTimeField(required=False)
+    end_at = fields.DateTimeField(required=False)
+
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "title",
+            "text",
+            "file",
+            "start_at",
+            "end_at",
+        )
 
 
 class MemberExamFTQuestionScoreSerializer(serializers.Serializer):
@@ -185,3 +185,61 @@ class MemberTakeExamSerilizer(serializers.ModelSerializer):
     class Config:
         model = MemberTakeExam
         fields = ("last_visit", "finish_at", "score", "member_take_exam_ftquestions")
+
+
+class ExamFTQuestionSerializer(serializers.ModelSerializer):
+    id = fields.IntegerField(required=False)
+    ftquestion_answers = ExamFTQuestionAnswerSerializer(many=True)
+
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "id",
+            "title",
+            "text",
+            "file",
+            "start_at",
+            "end_at",
+            "ftquestion_answers",
+        )
+
+    def validate(self, attrs):
+        file = attrs.get("file")
+        text = attrs.get("text")
+        if file is None and text is None:
+            raise ValidationError(detail="either file or text must be given")
+        return attrs
+
+    def create(self, validated_data):
+        exam = Exam.objects.create(
+            exam=validated_data["exam"],
+            title=validated_data["title"],
+            text=validated_data.get("text"),
+            file=validated_data.get("file"),
+            start_at=validated_data["start_at"],
+            end_at=validated_data["end_at"],
+        )
+        return exam
+
+
+class ExamResponseSerializer(serializers.ModelSerializer):
+    ftquestions = ExamFTQuestionSerializer(many=True)
+
+    class Meta:
+        model = Exam
+        fields = (
+            "id",
+            "session",
+            "title",
+            "description",
+            "exam_number",
+            "created_at",
+            "start_at",
+            "end_at",
+            "ftquestions",
+        )
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+
+        return response

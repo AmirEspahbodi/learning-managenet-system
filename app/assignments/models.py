@@ -87,7 +87,9 @@ class FTQuestion(TimeStampMixin):
 
 
 class FTQuestionAnswer(TimeStampMixin):
-    ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
+    ft_question = models.ForeignKey(
+        FTQuestion, on_delete=models.CASCADE, related_name="ftquestion_answers"
+    )
     answer_text = models.TextField(null=True, blank=True)
     answer_file = models.FileField(
         upload_to="assignment/teacher/answers/", null=True, blank=True

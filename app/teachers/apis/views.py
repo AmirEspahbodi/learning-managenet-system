@@ -16,11 +16,14 @@ from students.models import FinancialAids
 from students.apis.serializers import ShowFinancialAids
 from exams.apis.serializers import (
     ExamRequestSerializer,
+    ExamRequestUpdateSerializer,
     ExamSerializer,
-    ExamFTQuestionSerializer,
     ExamResponseSerializer,
     ExamFTQuestionAnswerSerializer,
+    ExamFTQuestionAnswerUpdateSerializer,
     ExamFTQuestionSerializer,
+    ExamFTQuestionUpdateSerializer,
+    ExamFTQuestionRequestSerializer,
     MemberExamFTQuestionSerializer,
     MemberExamFTQuestionScoreSerializer,
     MemberTakeExamSerilizer,
@@ -32,8 +35,10 @@ from exams.models import (
 )
 from assignments.apis.serializers import (
     AssignmentRequestSerializer,
+    AssignmentRequestUpdateSerializer,
     AssignmentSerializer,
     AssignmentFTQuestionSerializer,
+    AssignmentFTQuestionUpdateSerializer,
     AssignmentResponseSerializer,
     AssignmentFTQuestionAnswerSerializer,
     AssignmentFTQuestionSerializer,
@@ -42,7 +47,7 @@ from assignments.apis.serializers import (
     MemberTakeAssignmentSerilizer,
 )
 from assignments.models import (
-    FTQuestion,
+    FTQuestion as AssignmentFTQuestion,
     MemberAssignmentFTQuestion,
     MemberTakeAssignment,
 )
@@ -146,22 +151,24 @@ class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):
         return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
 
 
+########## EXAM
+
+
 class TeacherExamAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
     serializer_class = ExamRequestSerializer
 
     def get(self, request, *args, **kwargs) -> ExamSerializer:
         if "exam_id" not in kwargs:
-            return Response(
-                data={"this paramter requered": "exam_id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise exceptions.MethodNotAllowed()
         return Response(
             data=ExamResponseSerializer(self.exam).data,
             status=status.HTTP_200_OK,
         )
 
     def post(self, request, *args, **kwargs) -> ExamSerializer:
+        if "session_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             instance = serializer.save(session=self.session)
@@ -172,22 +179,44 @@ class TeacherExamAPIView(IsRelativeTeacherMixin, GenericAPIView):
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, *args, **kwargs):
+        if "exam_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        serializer = ExamRequestUpdateSerializer(data=request.data, instance=self.exam)
+        if serializer.is_valid():
+            new_instance = serializer.save()
+            return Response(
+                data=self.serializer_class(new_instance).data, status=status.HTTP_200_OK
+            )
+        else:
+            raise exceptions.APIException(
+                detail=serializer.errors, code=status.HTTP_400_BAD_REQUEST
+            )
+
+    def delete(self, request, *args, **kwargs):
+        if "exam_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        self.exam.delete()
+        return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
+
 
 class TeacherExamQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
-    serializer_class = ExamFTQuestionSerializer
+    serializer_class = ExamFTQuestionRequestSerializer
     permission_classes = [IsTeacher]
 
     def post(self, request, *args, **kwargs) -> ExamFTQuestionSerializer:
+        if "exam_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
         FTQuestions = []
         for question in request.data:
             serializer = self.serializer_class(data=question)
             if serializer.is_valid():
-                FTQuestions.append(FTQuestion(exam=self.exam, **serializer.data))
+                FTQuestions.append(ExamFTQuestion(exam=self.exam, **serializer.data))
             else:
                 return Response(
                     data=serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
-        instances = FTQuestion.objects.bulk_create(FTQuestions)
+        instances = ExamFTQuestion.objects.bulk_create(FTQuestions)
         return Response(
             data=ExamFTQuestionSerializer(instances, many=True).data,
             status=status.HTTP_201_CREATED,
@@ -195,12 +224,33 @@ class TeacherExamQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         if "exam_ftquestion_id" not in kwargs:
-            return Response(
-                data={"detail": "not found exam ftquestion id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise exceptions.MethodNotAllowed()
         return Response(
             data=ExamFTQuestionSerializer(self.exam_ftquestion).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def put(self, request, *args, **kwargs):
+        if "exam_ftquestion_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        serilizer = ExamFTQuestionUpdateSerializer(
+            instance=self.exam_ftquestion, data=request.data
+        )
+        if serilizer.is_valid():
+            new_instance = serilizer.save()
+            return Response(
+                data=ExamFTQuestionSerializer(new_instance).data,
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return exceptions.ValidationError(detail=serilizer.errors)
+
+    def delete(self, request, *args, **kwargs):
+        if "exam_ftquestion_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        self.exam_ftquestion.delete()
+        return Response(
+            data={"message": "deleted"},
             status=status.HTTP_200_OK,
         )
 
@@ -211,10 +261,7 @@ class TeacherExamFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView)
 
     def post(self, request, *args, **kwargs):
         if "exam_ftquestion_id" not in kwargs:
-            return Response(
-                data={"detail": "not found exam ftquestion id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise exceptions.MethodNotAllowed()
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             instance = serializer.save(exam_ftquestion=self.exam_ftquestion)
@@ -226,13 +273,41 @@ class TeacherExamFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView)
                 data={"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
 
+    def get(self, request, *args, **kwargs):
+        if "exam_ftquestion_answer_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        return Response(
+            data=ExamFTQuestionAnswerSerializer(self.exam_ftquestionanswer).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def put(self, request, *args, **kwargs):
+        if "exam_ftquestion_answer_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        serilizer = ExamFTQuestionAnswerUpdateSerializer(
+            self.exam_ftquestionanswer, data=request.data
+        )
+        if serilizer.is_valid():
+            new_instance = serilizer.save()
+            return Response(
+                data=ExamFTQuestionAnswerSerializer(new_instance).data,
+                status=status.HTTP_200_OK,
+            )
+        else:
+            raise exceptions.ValidationError(detail=serilizer.errors)
+
+    def delete(self, request, *args, **kwargs):
+        if "exam_ftquestion_answer_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        self.exam_ftquestionanswer.delete()
+        return Response(data={"message": "deleted"}, status=status.HTTP_200_OK)
+
 
 class TeacherListMemberExamAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
 
     def get(self, request, *args, **kwargs):
         member_exams = MemberTakeExam.objects.filter(exam=self.exam)
-
         return Response(
             data=MemberTakeExamSerilizer(member_exams, many=True).data,
             status=status.HTTP_200_OK,
@@ -319,22 +394,24 @@ class TeacherMemberExamFtQuestionAPIView(GenericAPIView):
         return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)
 
 
+########## ASSIGNMENTS
+
+
 class TeacherAssignmentAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
     serializer_class = AssignmentRequestSerializer
 
     def get(self, request, *args, **kwargs) -> AssignmentSerializer:
         if "assignment_id" not in kwargs:
-            return Response(
-                data={"this paramter requered": "assignment_id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise exceptions.MethodNotAllowed()
         return Response(
             data=AssignmentResponseSerializer(self.assignment).data,
             status=status.HTTP_200_OK,
         )
 
     def post(self, request, *args, **kwargs) -> AssignmentSerializer:
+        if "session_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             instance = serializer.save(session=self.session)
@@ -345,28 +422,46 @@ class TeacherAssignmentAPIView(IsRelativeTeacherMixin, GenericAPIView):
         else:
             return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, *args, **kwargs):
+        if "assignment_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        serilizer = AssignmentRequestUpdateSerializer(
+            instance=self.assignment, data=request.data
+        )
+        if serilizer.is_valid():
+            new_instance = serilizer.save()
+            return Response(
+                data=self.serializer_class(new_instance).data, status=status.HTTP_200_OK
+            )
+        else:
+            raise exceptions.ValidationError(detail=serilizer.errors)
+
+    def delete(self, request, *args, **kwargs):
+        if "assignment_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        self.assignment.delete()
+        return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
+
 
 class TeacherAssignmentQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
     serializer_class = AssignmentFTQuestionSerializer
     permission_classes = [IsTeacher]
 
     def post(self, request, *args, **kwargs) -> AssignmentFTQuestionSerializer:
+        if "assignment_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
         FTQuestions = []
-        print("\n\n\n")
         for question in request.data:
             serializer = self.serializer_class(data=question)
             if serializer.is_valid():
                 FTQuestions.append(
-                    FTQuestion(assignment=self.assignment, **serializer.data)
+                    AssignmentFTQuestion(assignment=self.assignment, **serializer.data)
                 )
-                print(FTQuestions)
-                print(serializer.data)
             else:
                 return Response(
                     data=serializer.errors, status=status.HTTP_400_BAD_REQUEST
                 )
-        print("\n\n\n")
-        instances = FTQuestion.objects.bulk_create(FTQuestions)
+        instances = AssignmentFTQuestion.objects.bulk_create(FTQuestions)
         return Response(
             data=AssignmentFTQuestionSerializer(instances, many=True).data,
             status=status.HTTP_201_CREATED,
@@ -374,12 +469,33 @@ class TeacherAssignmentQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         if "assignment_ftquestion_id" not in kwargs:
-            return Response(
-                data={"detail": "not found assignment ftquestion id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise exceptions.MethodNotAllowed()
         return Response(
             data=AssignmentFTQuestionSerializer(self.assignment_ftquestion).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def put(self, request, *args, **kwargs):
+        if "assignment_ftquestion_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        serializer = AssignmentFTQuestionUpdateSerializer(
+            instance=self.assignment_ftquestion, data=request.data
+        )
+        if serializer.is_valid():
+            new_instance = serializer.save()
+            return Response(
+                data=AssignmentFTQuestionSerializer(new_instance).data,
+                status=status.HTTP_200_OK,
+            )
+        else:
+            raise exceptions.ValidationError(detail=serializer.errors)
+
+    def delete(self, request, *args, **kwargs):
+        if "assignment_ftquestion_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        self.assignment_ftquestion.delete()
+        return Response(
+            data={"message": "OK"},
             status=status.HTTP_200_OK,
         )
 
@@ -389,10 +505,7 @@ class TeacherAssignmentFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAP
 
     def post(self, request, *args, **kwargs):
         if "assignment_ftquestion_id" not in kwargs:
-            return Response(
-                data={"detail": "not found assignment ftquestion id"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise exceptions.MethodNotAllowed()
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             instance = serializer.save(assignment_ftquestion=self.assignment_ftquestion)
@@ -403,6 +516,34 @@ class TeacherAssignmentFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAP
             return Response(
                 data={"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
             )
+
+    def get(self, request, *args, **kwargs):
+        if "assignment_ftquestion_answer_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        return Response(
+            data=self.serializer_class(self.assignment_ftquestionanswer).data,
+            status=status.HTTP_200_OK,
+        )
+
+    def put(self, request, *args, **kwargs):
+        if "assignment_ftquestion_answer_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        serializer = self.serializer_class(
+            instance=self.assignment_ftquestionanswer, data=request.data
+        )
+        if serializer.is_valid():
+            new_instance = serializer.save()
+            return Response(
+                data=self.serializer_class(new_instance).data, status=status.HTTP_200_OK
+            )
+        else:
+            raise exceptions.ValidationError(detail=serializer.errors)
+
+    def delete(self, request, *args, **kwargs):
+        if "assignment_ftquestion_answer_id" not in kwargs:
+            raise exceptions.MethodNotAllowed()
+        self.assignment_ftquestionanswer.delete()
+        return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)
 
 
 class TeacherMemberAssignmentFtQuestionAPIView(GenericAPIView):
@@ -505,3 +646,6 @@ class TeacherGetMemberAssignmentAPIView(GenericAPIView):
             data=MemberTakeAssignmentSerilizer(member_assignment).data,
             status=status.HTTP_200_OK,
         )
+
+
+##############  CONTENT

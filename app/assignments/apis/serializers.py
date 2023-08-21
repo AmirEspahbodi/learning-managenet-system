@@ -27,37 +27,22 @@ from ..models import (
 )
 
 
-class AssignmentFTQuestionSerializer(serializers.ModelSerializer):
-    id = fields.IntegerField(required=False)
+class AssignmentFTQuestionUpdateSerializer(serializers.ModelSerializer):
+    title = fields.CharField(required=False)
+    text = fields.CharField(required=False)
+    file = fields.FileField(required=False)
+    start_at = fields.DateTimeField(required=False)
+    end_at = fields.DateTimeField(required=False)
 
     class Meta:
         model = FTQuestion
         fields = (
-            "id",
             "title",
             "text",
             "file",
             "start_at",
             "end_at",
         )
-
-    def validate(self, attrs):
-        file = attrs.get("file")
-        text = attrs.get("text")
-        if file is None and text is None:
-            raise ValidationError(detail="either file or text must be given")
-        return attrs
-
-    def create(self, validated_data):
-        assignment = Assignment.objects.create(
-            assignment=validated_data["assignment"],
-            title=validated_data["title"],
-            text=validated_data.get("text"),
-            file=validated_data.get("file"),
-            start_at=validated_data["start_at"],
-            end_at=validated_data["end_at"],
-        )
-        return assignment
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
@@ -80,27 +65,20 @@ class AssignmentSerializer(serializers.ModelSerializer):
         return response
 
 
-class AssignmentResponseSerializer(serializers.ModelSerializer):
-    ftquestions = AssignmentFTQuestionSerializer(many=True)
+class AssignmentRequestUpdateSerializer(serializers.ModelSerializer):
+    title = fields.CharField(required=False)
+    description = fields.CharField(required=False)
+    start_at = fields.DateTimeField(required=False)
+    end_at = fields.DateTimeField(required=False)
 
     class Meta:
         model = Assignment
         fields = (
-            "id",
-            "session",
             "title",
             "description",
-            "assignment_number",
-            "created_at",
             "start_at",
             "end_at",
-            "ftquestions",
         )
-
-    def to_representation(self, instance):
-        response = super().to_representation(instance)
-
-        return response
 
 
 class AssignmentRequestSerializer(serializers.ModelSerializer):
@@ -131,6 +109,15 @@ class AssignmentRequestSerializer(serializers.ModelSerializer):
         return assignment
 
 
+class AssignmentFTQuestionAnswerUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FTQuestionAnswer
+        fields = (
+            "answer_text",
+            "answer_file",
+        )
+
+
 class AssignmentFTQuestionAnswerSerializer(serializers.ModelSerializer):
     id = fields.IntegerField(required=False)
 
@@ -156,6 +143,64 @@ class AssignmentFTQuestionAnswerSerializer(serializers.ModelSerializer):
             answer_file=validated_data.get("answer_file"),
         )
         return ft_question_answer
+
+
+class AssignmentFTQuestionSerializer(serializers.ModelSerializer):
+    id = fields.IntegerField(required=False)
+    ftquestion_answers = AssignmentFTQuestionAnswerSerializer(many=True)
+
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "id",
+            "title",
+            "text",
+            "file",
+            "start_at",
+            "end_at",
+            "ftquestion_answers",
+        )
+
+    def validate(self, attrs):
+        file = attrs.get("file")
+        text = attrs.get("text")
+        if file is None and text is None:
+            raise ValidationError(detail="either file or text must be given")
+        return attrs
+
+    def create(self, validated_data):
+        assignment = Assignment.objects.create(
+            assignment=validated_data["assignment"],
+            title=validated_data["title"],
+            text=validated_data.get("text"),
+            file=validated_data.get("file"),
+            start_at=validated_data["start_at"],
+            end_at=validated_data["end_at"],
+        )
+        return assignment
+
+
+class AssignmentResponseSerializer(serializers.ModelSerializer):
+    ftquestions = AssignmentFTQuestionSerializer(many=True)
+
+    class Meta:
+        model = Assignment
+        fields = (
+            "id",
+            "session",
+            "title",
+            "description",
+            "assignment_number",
+            "created_at",
+            "start_at",
+            "end_at",
+            "ftquestions",
+        )
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+
+        return response
 
 
 class FTQuestionSerializer(serializers.ModelSerializer):

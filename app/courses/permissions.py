@@ -177,11 +177,11 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
 
             elif "assignment_ftquestion_answer_id" in kwargs:
                 self.assignment_ftquestion_answer_id = kwargs.get(
-                    "exam_ftquestion_answer_id"
+                    "assignment_ftquestion_answer_id"
                 )
                 self.assignment_ftquestionanswer = (
                     AssignmentFTQuestionAnswer.objects.select_related("ft_question")
-                    .select_related("ft_question__exam")
+                    .select_related("ft_question__assignment")
                     .get(id=self.assignment_ftquestion_answer_id)
                 )
                 self.assignment_ftquestion = (

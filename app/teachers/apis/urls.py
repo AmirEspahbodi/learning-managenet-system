@@ -44,7 +44,7 @@ urlpatterns = [
     path(
         "exam/<int:exam_id>/",
         TeacherExamAPIView.as_view(),
-        name="exam_get",
+        name="exam",
     ),
     path(
         "exam/<int:exam_id>/members/",
@@ -64,12 +64,17 @@ urlpatterns = [
     path(
         "exam/ftquestion/<int:exam_ftquestion_id>/",
         TeacherExamQuestionAPIView.as_view(),
-        name="exam_ftquestion_get",
+        name="exam_ftquestion",
     ),
     path(
         "exam/ftquestion/<int:exam_ftquestion_id>/answer/create/",
         TeacherExamFtQuestionAnswerAPIView.as_view(),
         name="exam_ftquestion_answer_create",
+    ),
+    path(
+        "exam/ftquestion/answer/<int:exam_ftquestion_answer_id>/",
+        TeacherExamFtQuestionAnswerAPIView.as_view(),
+        name="exam_ftquestion_answer",
     ),
     path(
         "exam/ftquestion/member/answer/<int:member_exam_ftquestion_id>/score/",
@@ -84,7 +89,7 @@ urlpatterns = [
     path(
         "assignment/<int:assignment_id>/",
         TeacherAssignmentAPIView.as_view(),
-        name="assignment_get",
+        name="assignment",
     ),
     path(
         "assignment/<int:assignment_id>/members/",
@@ -108,6 +113,11 @@ urlpatterns = [
     ),
     path(
         "assignment/ftquestion/<int:assignment_ftquestion_id>/answer/create/",
+        TeacherAssignmentFtQuestionAnswerAPIView.as_view(),
+        name="assignment_ftquestion_answer_create",
+    ),
+    path(
+        "assignment/ftquestion/answer/<int:assignment_ftquestion_answer_id>/",
         TeacherAssignmentFtQuestionAnswerAPIView.as_view(),
         name="assignment_ftquestion_answer_create",
     ),
