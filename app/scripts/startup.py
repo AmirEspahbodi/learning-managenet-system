@@ -8,10 +8,10 @@ from students.models import Student
 
 def run():
     superuser = User.objects.create_superuser(
-        "amir",
-        email="amir@amir.amir",
+        "admin",
+        email="admin@admin.admin",
         password="Abcd_1234",
-        first_name="amir",
+        first_name="admin",
         last_name="espahbodi",
         phone_number="+989013971301",
     )

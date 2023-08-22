@@ -1,0 +1,4 @@
+docker compose build
+docker compose up -d
+docker-compose exec api python /lms/manage.py migrate
+docker-compose exec api python /lms/manage.py runscript startup
