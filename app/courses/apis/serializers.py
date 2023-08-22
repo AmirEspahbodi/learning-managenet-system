@@ -11,11 +11,11 @@ from courses.models import (
     MemberShipRoles,
 )
 from trs.apis.serializers import TimeSlotSerializer, SemesterSerializer
-from teachers.apis.serialisers import TeacherSerializer
 from assignments.apis.serializers import AssignmentSerializer
 from exams.apis.serializers import ExamSerializer
 from django.contrib.auth import get_user_model
 from accounts.apis.serializers import UserSerializerBaseInfo
+from contents.apis.serializers import ContentSerializer
 
 User = get_user_model()
 
@@ -100,7 +100,6 @@ class CourseDetailSerializer(CourseSerializer):
     course_times = CourseTimeSerializer(many=True, read_only=True)
 
     def __init__(self, instance=None, data=empty, **kwargs):
-        kwargs
         super().__init__(instance=instance, data=data, **kwargs)
 
     class Meta:
@@ -162,6 +161,7 @@ class SessionSerializer(ModelSerializer):
     time_slot = TimeSlotSerializer(read_only=True)
     assignments = AssignmentSerializer(many=True, read_only=True)
     exams = ExamSerializer(many=True, read_only=True)
+    contents = ContentSerializer(many=True, read_only=True)
     course = CourseSerializerSlim()
 
     class Meta:
@@ -175,4 +175,5 @@ class SessionSerializer(ModelSerializer):
             "description",
             "assignments",
             "exams",
+            "contents",
         )

@@ -1,5 +1,9 @@
+from django.utils import timezone
+from django.db.models import Q
+
 from rest_framework import serializers, fields
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import empty
 from ..models import (
     Exam,
     FTQuestion,
@@ -77,11 +81,7 @@ class ExamFTQuestionAnswerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FTQuestionAnswer
-        fields = (
-            "id",
-            "answer_text",
-            "answer_file",
-        )
+        fields = ("id", "answer_text", "answer_file", "accessing_at")
 
     def validate(self, attrs):
         answer_text = attrs.get("answer_text")
@@ -95,6 +95,7 @@ class ExamFTQuestionAnswerSerializer(serializers.ModelSerializer):
             ft_question=validated_data["exam_ftquestion"],
             answer_text=validated_data.get("answer_text"),
             answer_file=validated_data.get("answer_file"),
+            accessing_at=validated_data.get("accessing_at"),
         )
         return ft_question_answer
 
@@ -105,10 +106,7 @@ class ExamFTQuestionAnswerUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FTQuestionAnswer
-        fields = (
-            "answer_text",
-            "answer_file",
-        )
+        fields = ("answer_text", "answer_file", "accessing_at")
 
 
 class ExamFTQuestionRequestSerializer(serializers.ModelSerializer):
@@ -246,3 +244,107 @@ class ExamResponseSerializer(serializers.ModelSerializer):
         response = super().to_representation(instance)
 
         return response
+
+
+class StudentOutOfTimeExamFtQuestionSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "title",
+            "start_at",
+            "end_at",
+        )
+
+
+class StudentMemberExamFTQuestionRequestSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberExamFTQuestion
+        fields = ("answered_text", "answered_file")
+
+
+class StudentMemberExamFTQuestionResponseSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberExamFTQuestion
+        fields = ("score", "answered_text", "answered_file", "created_at", "updated_at")
+
+
+class StudentExamFtQuestionRersponseSerilizer(serializers.ModelSerializer):
+    def __init__(self, instance=None, data=empty, **kwargs):
+        self.member_take_exam = kwargs.pop("member_take_exam")
+        self.member_exam_ftquestions = MemberExamFTQuestion.objects.filter(
+            member_take_exam=self.member_take_exam,
+            ft_question__in=[ins.id for ins in instance],
+        ).all()
+        super().__init__(instance=instance, data=data, **kwargs)
+
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "id",
+            "title",
+            "text",
+            "file",
+            "start_at",
+            "end_at",
+        )
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        member_exam_ftquestion = [
+            member_exam_ftquestion
+            for member_exam_ftquestion in self.member_exam_ftquestions
+            if member_exam_ftquestion.ft_question == instance
+        ]
+        if member_exam_ftquestion:
+            member_exam_ftquestion = member_exam_ftquestion[0]
+            representation["student_answer"] = {
+                "id": member_exam_ftquestion.id,
+                "answered_text": member_exam_ftquestion.answered_text,
+                "answered_file": member_exam_ftquestion.answered_file.url
+                if member_exam_ftquestion.answered_file
+                else None,
+                "score": member_exam_ftquestion.score,
+                "created_at": member_exam_ftquestion.created_at,
+                "updated_at": member_exam_ftquestion.updated_at,
+            }
+        else:
+            representation["student_answer"] = None
+        return representation
+
+
+class StudentExamFtQuestionWithAnswerRersponseSerilizer(
+    StudentExamFtQuestionRersponseSerilizer
+):
+    def __init__(self, instance=None, data=empty, **kwargs):
+        self.ftquestions_answers = FTQuestionAnswer.objects.filter(
+            Q(ft_question__in=[ins.id for ins in instance])
+            & Q(Q(accessing_at__isnull=True) | Q(accessing_at__lte=timezone.now()))
+        ).all()
+        super().__init__(instance=instance, data=data, **kwargs)
+
+    class Meta:
+        model = FTQuestion
+        fields = (
+            "id",
+            "title",
+            "text",
+            "file",
+            "start_at",
+            "end_at",
+        )
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        ftquestions_answers = [
+            ftqa for ftqa in self.ftquestions_answers if ftqa.ft_question == instance
+        ]
+        representation["answers"] = [
+            {
+                "answer_text": ftquestions_answer.answer_text,
+                "answer_file": ftquestions_answer.answer_file.url
+                if ftquestions_answer.answer_file
+                else None,
+            }
+            for ftquestions_answer in ftquestions_answers
+        ]
+        return representation

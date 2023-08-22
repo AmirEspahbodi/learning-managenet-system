@@ -2,6 +2,20 @@ from rest_framework import serializers, fields
 from contents.models import Content, MemberVisitContent
 
 
+class ContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Content
+        fields = (
+            "id",
+            "session",
+            "content_number",
+            "title",
+            "description",
+            "file",
+            "accessing_at",
+        )
+
+
 class ContentRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Content

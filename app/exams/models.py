@@ -50,7 +50,7 @@ class MemberTakeExam(TimeStampMixin):
         MemberShip,
         on_delete=models.CASCADE,
     )
-    last_visit = models.DateTimeField(auto_now_add=True)
+    last_visit = models.DateTimeField(auto_now=True)
     finish_at = models.DateTimeField(null=True, blank=True)
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
 
@@ -92,6 +92,7 @@ class FTQuestionAnswer(TimeStampMixin):
     answer_file = models.FileField(
         null=True, blank=True, upload_to="exam/teacher/answers/"
     )
+    accessing_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = "exams_ftquestion_answer"
@@ -110,7 +111,9 @@ class MemberExamFTQuestion(TimeStampMixin):
         on_delete=models.CASCADE,
         related_name="member_take_exam_ftquestions",
     )
-    ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
+    ft_question = models.ForeignKey(
+        FTQuestion, on_delete=models.CASCADE, related_name="student_answers"
+    )
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     answered_text = models.TextField(null=True, blank=True)
     answered_file = models.FileField(
@@ -130,4 +133,4 @@ class MemberExamFTQuestion(TimeStampMixin):
         )
 
     def __str__(self):
-        return f"student exam question answer: {self.member_take_exam.exam} {self.ft_question.title} {datetime2jalali(self.finish_at)}"
+        return f"student exam question answer: {self.member_take_exam.exam} {self.ft_question.title} "

@@ -29,7 +29,6 @@ from exams.apis.serializers import (
     MemberTakeExamSerilizer,
 )
 from exams.models import (
-    FTQuestion as ExamFTQuestion,
     MemberExamFTQuestion,
     MemberTakeExam,
 )
@@ -48,7 +47,6 @@ from assignments.apis.serializers import (
     MemberTakeAssignmentSerilizer,
 )
 from assignments.models import (
-    FTQuestion as AssignmentFTQuestion,
     MemberAssignmentFTQuestion,
     MemberTakeAssignment,
 )

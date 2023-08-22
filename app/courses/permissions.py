@@ -6,11 +6,13 @@ from assignments.models import (
     Assignment,
     FTQuestion as AssignmentFTQuestion,
     FTQuestionAnswer as AssignmentFTQuestionAnswer,
+    MemberAssignmentFTQuestion,
 )
 from exams.models import (
     Exam,
     FTQuestion as ExamFTQuestion,
     FTQuestionAnswer as ExamFTQuestionAnswer,
+    MemberExamFTQuestion,
 )
 from contents.models import Content
 
@@ -63,34 +65,112 @@ class IsRelativeStudentMixin(IsRelativeBaseMixin):
 
         if not request.user.is_student():
             raise exceptions.PermissionDenied()
+        self.course = None
+        try:
+            if "course_id" in kwargs:
+                self.course_id = kwargs.get("course_id")
+                self.course = Course.objects.get(id=self.course_id)
+            elif "session_id" in kwargs:
+                self.session_id = kwargs.get("session_id")
+                self.session = Session.objects.select_related("course").get(
+                    id=self.session_id
+                )
+                self.course = self.session.course
 
-        if "course_id" in kwargs:
-            self.course_id = kwargs.get("course_id")
-            self.course = Course.objects.get(id=self.course_id)
-        elif "session_id" in kwargs:
-            self.session_id = kwargs.get("session_id")
-            self.session = Session.objects.select_related("course").get(
-                id=self.session_id
-            )
-            self.course = self.session.course
-        elif "assignment_id" in kwargs:
-            self.assignment_id = self.assignment_id = kwargs.get("assignment_id")
-            self.assignment = (
-                Assignment.objects.select_related("session")
-                .select_related("session__course")
-                .get(id=self.assignment_id)
-            )
-            self.course = self.assignment.session.course
+            elif "exam_id" in kwargs:
+                self.exam_id = kwargs.get("exam_id")
+                self.exam = (
+                    Exam.objects.select_related("session")
+                    .select_related("session__course")
+                    .get(id=self.exam_id)
+                )
+                self.course = self.exam.session.course
 
-        elif "exam_id" in kwargs:
-            self.exam_id = kwargs.get("exam_id")
-            self.exam = (
-                Exam.objects.select_related("session")
-                .select_related("session__course")
-                .get(id=self.exam_id)
-            )
-            self.course = self.exam.session.course
+            elif "exam_ftquestion_id" in kwargs:
+                self.exam_ftquestion_id = kwargs.get("exam_ftquestion_id")
+                self.exam_ftquestion = (
+                    ExamFTQuestion.objects.select_related("exam")
+                    .select_related("exam__session")
+                    .get(id=self.exam_ftquestion_id)
+                )
+                self.exam = self.exam_ftquestion.exam
+                self.session = self.exam.session
+                self.course = self.session.course
+                print(self.exam_ftquestion)
 
+            elif "exam_ftquestion_answer_id" in kwargs:
+                self.exam_ftquestion_answer_id = kwargs.get("exam_ftquestion_answer_id")
+                self.exam_ftquestionanswer = (
+                    ExamFTQuestionAnswer.objects.select_related("ft_question")
+                    .select_related("ft_question__exam")
+                    .get(id=self.exam_ftquestion_answer_id)
+                )
+                self.exam_ftquestion = self.exam_ftquestionanswer.ft_question
+                self.exam = self.exam_ftquestion.exam
+                self.session = self.exam.session
+                self.course = self.session.course
+            elif "member_exam_ftquestion_id" in kwargs:
+                self.member_exam_ftquestion = (
+                    MemberExamFTQuestion.objects.select_related("ft_question")
+                    .select_related("ft_question__exam")
+                    .get(id=kwargs.get("member_exam_ftquestion_id"))
+                )
+                self.exam_ftquestion = self.member_exam_ftquestion.ft_question
+                self.exam = self.exam_ftquestion.exam
+                self.session = self.exam.session
+                self.course = self.session.course
+
+            elif "assignment_id" in kwargs:
+                self.assignment_id = self.assignment_id = kwargs.get("assignment_id")
+                self.assignment = (
+                    Assignment.objects.select_related("session")
+                    .select_related("session__course")
+                    .get(id=self.assignment_id)
+                )
+                self.course = self.assignment.session.course
+
+            elif "assignment_ftquestion_id" in kwargs:
+                self.assignment_ftquestion_id = kwargs.get("assignment_ftquestion_id")
+                self.assignment_ftquestion = (
+                    AssignmentFTQuestion.objects.select_related("assignment")
+                    .select_related("assignment__session")
+                    .get(id=self.assignment_ftquestion_id)
+                )
+                self.assignment = self.assignment_ftquestion.assignment
+                self.session = self.assignment.session
+                self.course = self.session.course
+
+            elif "assignment_ftquestion_answer_id" in kwargs:
+                self.assignment_ftquestion_answer_id = kwargs.get(
+                    "assignment_ftquestion_answer_id"
+                )
+                self.assignment_ftquestionanswer = (
+                    AssignmentFTQuestionAnswer.objects.select_related("ft_question")
+                    .select_related("ft_question__assignment")
+                    .get(id=self.assignment_ftquestion_answer_id)
+                )
+                self.assignment_ftquestion = (
+                    self.assignment_ftquestionanswer.ft_question
+                )
+                self.assignment = self.assignment_ftquestion.assignment
+                self.session = self.assignment.session
+                self.course = self.session.course
+            elif "member_assignment_ftquestion_id" in kwargs:
+                self.member_assignment_ftquestion = (
+                    MemberAssignmentFTQuestion.objects.select_related("ft_question")
+                    .select_related("ft_question__assignment")
+                    .get(id=kwargs.get("member_assignment_ftquestion_id"))
+                )
+                self.assignment_ftquestion = (
+                    self.member_assignment_ftquestion.ft_question
+                )
+                self.assignment = self.assignment_ftquestion.assignment
+                self.session = self.assignment.session
+                self.course = self.session.course
+        except ObjectDoesNotExist:
+            raise exceptions.NotFound()
+        if self.course is None:
+            raise exceptions.PermissionDenied()
         try:
             self.member = MemberShip.objects.get(
                 user=request.user, course=self.course, role=MemberShipRoles.STUDENT
@@ -111,6 +191,7 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
             self.student = request.user.teacher_user
         else:
             raise exceptions.PermissionDenied()
+        self.course = None
         try:
             if "course_id" in kwargs:
                 self.course_id = kwargs.get("course_id")
@@ -198,9 +279,11 @@ class IsRelativeTeacherMixin(IsRelativeBaseMixin):
                 )
                 self.session = self.content.session
                 self.course = self.session.course
-
         except ObjectDoesNotExist:
             raise exceptions.NotFound()
+
+        if self.course is None:
+            raise exceptions.PermissionDenied()
         try:
             self.member = MemberShip.objects.get(
                 user=request.user, course=self.course, role=MemberShipRoles.TEACHER

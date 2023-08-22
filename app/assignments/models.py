@@ -98,6 +98,7 @@ class FTQuestionAnswer(TimeStampMixin):
     answer_file = models.FileField(
         upload_to="assignment/teacher/answers/", null=True, blank=True
     )
+    accessing_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = "assignments_ftquestion_answer"
@@ -114,6 +115,7 @@ class MemberAssignmentFTQuestion(TimeStampMixin):
     member_take_assignment = models.ForeignKey(
         MemberTakeAssignment,
         on_delete=models.CASCADE,
+        related_name="member_take_assignment_ftquestions",
     )
     ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
     answered_text = models.TextField(null=True, blank=True)
