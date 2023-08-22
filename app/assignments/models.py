@@ -122,6 +122,7 @@ class MemberAssignmentFTQuestion(TimeStampMixin):
     answered_file = models.FileField(
         upload_to="assignment/students/answers/", null=True, blank=True
     )
+    score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
 
     class Meta:
         constraints = [

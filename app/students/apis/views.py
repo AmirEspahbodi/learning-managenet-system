@@ -29,7 +29,6 @@ from exams.apis.serializers import (
     StudentMemberExamFTQuestionResponseSerilizer,
     StudentExamFtQuestionWithAnswerRersponseSerilizer,
 )
-
 from assignments.models import (
     Assignment,
     FTQuestion as AssignmentFTQuestion,
@@ -45,6 +44,8 @@ from assignments.apis.serializers import (
     StudentMemberAssignmentFTQuestionResponseSerilizer,
     StudentAssignmentFtQuestionWithAnswerRersponseSerilizer,
 )
+from contents.apis.serializers import StudentContentResponseSerializer
+from contents.models import MemberVisitContent
 
 
 class StudentHomeAPIView(GenericAPIView):
@@ -135,6 +136,9 @@ class StudentSessionDetailAPIView(IsRelativeStudentMixin, GenericAPIView):
             {"sessions": SessionSerializer(self.session).data},
             status=status.HTTP_200_OK,
         )
+
+
+########### EXAMS
 
 
 class StudentExamAPIView(IsRelativeStudentMixin, GenericAPIView):
@@ -239,7 +243,10 @@ class StudentExamFTQuestionAPIView(IsRelativeStudentMixin, GenericAPIView):
         )
         if serializer.is_valid():
             instance = serializer.save()
-            return StudentMemberExamFTQuestionResponseSerilizer(instance)
+            return Response(
+                data=StudentMemberExamFTQuestionResponseSerilizer(instance).data,
+                status=status.HTTP_200_OK,
+            )
         else:
             raise exceptions.ValidationError(serializer.errors)
 
@@ -369,7 +376,10 @@ class StudentAssignmentFTQuestionAPIView(IsRelativeStudentMixin, GenericAPIView)
         )
         if serializer.is_valid():
             instance = serializer.save()
-            return StudentMemberAssignmentFTQuestionResponseSerilizer(instance)
+            return Response(
+                data=StudentMemberAssignmentFTQuestionResponseSerilizer(instance).data,
+                status=status.HTTP_200_OK,
+            )
         else:
             raise exceptions.ValidationError(serializer.errors)
 
@@ -379,3 +389,19 @@ class StudentAssignmentFTQuestionAPIView(IsRelativeStudentMixin, GenericAPIView)
         self.check_time()
         self.member_assignment_ftquestion.delete()
         return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
+
+
+########### CONTENTS
+
+
+class StudentContentAPIView(IsRelativeStudentMixin, GenericAPIView):
+    def get(self, request, *args, **kwargs):
+        [member_visit_content, created] = MemberVisitContent.objects.get_or_create(
+            member=self.member, content=self.content
+        )
+        if not created:
+            member_visit_content.save()
+        return Response(
+            data=StudentContentResponseSerializer(self.content).data,
+            status=status.HTTP_200_OK,
+        )

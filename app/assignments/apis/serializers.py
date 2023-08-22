@@ -283,7 +283,14 @@ class StudentMemberAssignmentFTQuestionRequestSerilizer(serializers.ModelSeriali
 class StudentMemberAssignmentFTQuestionResponseSerilizer(serializers.ModelSerializer):
     class Meta:
         model = MemberAssignmentFTQuestion
-        fields = ("score", "answered_text", "answered_file", "created_at", "updated_at")
+        fields = (
+            "id",
+            "score",
+            "answered_text",
+            "answered_file",
+            "created_at",
+            "updated_at",
+        )
 
 
 class StudentAssignmentFtQuestionRersponseSerilizer(serializers.ModelSerializer):

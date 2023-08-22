@@ -1,12 +1,14 @@
 from django.urls import path
 from students.apis.views import (
     StudentHomeAPIView,
-    StudentCourseEnroleAPIView,
     StudentCourseDetailAPIView,
     StudentSessionDetailAPIView,
     StudentGetFinancialAidAPIView,
     StudentExamAPIView,
     StudentExamFTQuestionAPIView,
+    StudentAssignmentAPIView,
+    StudentAssignmentFTQuestionAPIView,
+    StudentContentAPIView,
 )
 
 urlpatterns = [
@@ -41,4 +43,20 @@ urlpatterns = [
         StudentExamFTQuestionAPIView.as_view(),
         name="exam-question-answer",
     ),
+    path(
+        "assignment/<int:assignment_id>/",
+        StudentAssignmentAPIView.as_view(),
+        name="assignment",
+    ),
+    path(
+        "assignment/ftquestion/<int:assignment_ftquestion_id>/answer/",
+        StudentAssignmentFTQuestionAPIView.as_view(),
+        name="assignment-ftquestion-answer-create",
+    ),
+    path(
+        "assignment/ftquestion-answer/<int:member_assignment_ftquestion_id>/",
+        StudentAssignmentFTQuestionAPIView.as_view(),
+        name="assignment-question-answer",
+    ),
+    path("content/<int:content_id>/", StudentContentAPIView.as_view(), name="content"),
 ]

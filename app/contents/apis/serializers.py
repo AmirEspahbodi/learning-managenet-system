@@ -77,3 +77,16 @@ class ContentResponseSerializer(serializers.ModelSerializer):
             "accessing_at",
             "member_contents",
         )
+
+
+class StudentContentResponseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Content
+        fields = (
+            "id",
+            "session",
+            "content_number",
+            "title",
+            "description",
+            "file",
+        )
