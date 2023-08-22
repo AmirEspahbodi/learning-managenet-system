@@ -2,10 +2,11 @@ version: '3.9'
 
 services:
   api:
-    build: .
-    command: app/manage.py runserver
+    container_name: api
+    build: ./app
+    command: python app/manage.py runserver
     volumes:
-      - .:/lms
+      - ./app:/lms
     ports:
       - "80:8000"
     env_file:
@@ -13,7 +14,7 @@ services:
     depends_on:
       - db
     links:
-    - "db:pgsql-server"
+      - "db:pgsql-server"
 
   db:
     image: postgres:15-alpine
@@ -25,9 +26,9 @@ services:
       POSTGRES_PASSWORD: secret
       PGDATA: /var/lib/postgresql/data
     volumes:
-    - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
-    - "8080:5432"
+      - "8080:5432"
     env_file:
       - ./.env
 
@@ -41,11 +42,11 @@ services:
     ports:
       - "5050:80"
     volumes:
-    - pgadmin-data:/var/lib/pgadmin
+      - pgadmin-data:/var/lib/pgadmin
     depends_on:
       - db
     links:
-    - "db:pgsql-server"
+      - "db:pgsql-server"
 volumes:
   postgres_data:
   pgadmin-data:
