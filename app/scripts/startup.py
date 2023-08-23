@@ -1,7 +1,27 @@
-from datetime import date
+from random import randint
+from datetime import date, timedelta
+from django.utils import timezone
+from django.db.models import Q
 from accounts.models import User, Roles, VerificationStatus
 from trs.models import Room, Semester, TimeSlot, Semseters, Days_Of_Week
-from courses.models import CourseTitle, Course, CourseTime, MemberShip, MemberShipRoles
+from courses.models import (
+    CourseTitle,
+    Course,
+    CourseTime,
+    MemberShip,
+    MemberShipRoles,
+    Session,
+)
+from assignments.models import (
+    Assignment,
+    FTQuestion as AssignmentFTQuestion,
+    FTQuestionAnswer as AssignmentFTQuestionAnswer,
+)
+from exams.models import (
+    Exam,
+    FTQuestion as ExamFTQuestion,
+    FTQuestionAnswer as ExamFTQuestionAnswer,
+)
 from teachers.models import Teacher
 from students.models import Student
 
@@ -16,7 +36,8 @@ def run():
         phone_number="+989013971301",
     )
     print(f"superuser {superuser} created!\n\n")
-
+    superuser.role = Roles.TEACHER * superuser.role
+    superuser.save()
     users: list[User] = [
         User.objects.create_user(
             f"teacher{i}" if i < 3 else f"student{i-3}",
@@ -126,3 +147,72 @@ def run():
         for index in range(len(timeslots))
     ]
     print(f"course_time {course_time} created!\n\n")
+    sessions = Session.objects.filter(
+        Q(session_number=0) | Q(session_number=1) | Q(session_number=2)
+    ).all()
+    current_time = timezone.now()
+    two_week_later = current_time + timedelta(weeks=2)
+    for session in sessions:
+        exam = Exam.objects.create(
+            session=session,
+            title="exam",
+            description=f"simple exam for {session}",
+            exam_number=0,
+            start_at=current_time,
+            end_at=two_week_later,
+        )
+        exam_questions = []
+        for i in range(randint(3, 5)):
+            exam_questions.append(
+                ExamFTQuestion(
+                    exam=exam,
+                    title="simple question",
+                    text="simple question {i} for exam {exam}",
+                    start_at=current_time,
+                    end_at=two_week_later,
+                )
+            )
+        exam_questions = ExamFTQuestion.objects.bulk_create(exam_questions)
+        exam_question_answers = []
+        for exam_question in exam_questions:
+            exam_question_answers.append(
+                ExamFTQuestionAnswer(
+                    ft_question=exam_question,
+                    answer_text=f"simple answer for {exam_question}",
+                    accessing_at=two_week_later,
+                )
+            )
+        ExamFTQuestionAnswer.objects.bulk_create(exam_question_answers)
+        assignment = Assignment.objects.create(
+            session=session,
+            title="assignment",
+            description=f"simple assignment for {session}",
+            assignment_number=0,
+            start_at=current_time,
+            end_at=two_week_later,
+        )
+        assignment_questions = []
+        for i in range(randint(3, 5)):
+            assignment_questions.append(
+                AssignmentFTQuestion(
+                    assignment=assignment,
+                    title="simple question",
+                    text="simple question {i} for assignment {assignment}",
+                    start_at=current_time,
+                    end_at=two_week_later,
+                )
+            )
+        assignment_questions = AssignmentFTQuestion.objects.bulk_create(
+            assignment_questions
+        )
+        assignment_question_answers = []
+        for assignment_question in assignment_questions:
+            assignment_question_answers.append(
+                AssignmentFTQuestionAnswer(
+                    ft_question=assignment_question,
+                    answer_text=f"simple answer for {assignment_question}",
+                    accessing_at=two_week_later,
+                )
+            )
+        AssignmentFTQuestionAnswer.objects.bulk_create(assignment_question_answers)
+    print(f"for sessions {sessions} exam ans assignment created")

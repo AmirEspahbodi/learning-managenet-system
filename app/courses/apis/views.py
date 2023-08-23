@@ -1,15 +1,14 @@
-from django.db.models import Q, FilteredRelation
 from django.shortcuts import get_object_or_404
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from ..models import Course, MemberShip, MemberShipRoles
+from ..models import Course
 from .serializers import CourseSerializer, CourseDetailSerializer
-from courses.permissions import IsStudent
 
 
 class CourseSearchAPIView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = CourseSerializer
 
     def get(self, request, *args, **kwargs):
         search_content = request.query_params.get("content")
@@ -31,11 +30,11 @@ class CourseSearchDetailAPIView(GenericAPIView):
         course_id = kwargs.get("course_id")
         course = get_object_or_404(Course, pk=course_id)
         content = CourseDetailSerializer(
-            course, 
+            course,
             context={
-                "course_id":course_id,
-                'is_student':hasattr(request.user, 'student_user'),
-                "user_id":request.user.id
-                }
-            ).data
+                "course_id": course_id,
+                "is_student": hasattr(request.user, "student_user"),
+                "user_id": request.user.id,
+            },
+        ).data
         return Response(content, status=status.HTTP_200_OK)

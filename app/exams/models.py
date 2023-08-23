@@ -16,7 +16,7 @@ class Exam(TimeStampMixin):
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="exams")
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    exam_number = models.PositiveSmallIntegerField(editable=False)
+    exam_number = models.PositiveSmallIntegerField()
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
 
@@ -72,7 +72,6 @@ class FTQuestion(TimeStampMixin):
     title = models.CharField(max_length=255)
     text = models.TextField(null=True, blank=True)
     file = models.FileField(upload_to="exam/questions/", null=True, blank=True)
-    updated_at = models.DateTimeField(auto_now=True)
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
 
