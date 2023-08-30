@@ -54,7 +54,7 @@ class CourseSerializer(ModelSerializer):
             "id",
             "course_title",
             "course_times",
-            "group_course_number",
+            "course_number",
             "semester",
         )
 
@@ -91,7 +91,7 @@ class CourseSerializerSlim(ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ("id", "course_title", "group_course_number", "semester")
+        fields = ("id", "course_title", "course_number", "semester")
 
 
 class CourseDetailSerializer(CourseSerializer):
@@ -107,7 +107,7 @@ class CourseDetailSerializer(CourseSerializer):
         fields = (
             "id",
             "course_title",
-            "group_course_number",
+            "course_number",
             "semester",
             "start_date",
             "end_date",

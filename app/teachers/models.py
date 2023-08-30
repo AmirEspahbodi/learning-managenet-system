@@ -26,7 +26,7 @@ class Teacher(TimeStampMixin):
         )
 
 
-class TeacherPublished(TimeStampMixin):
+class Published(TimeStampMixin):
     teacher = models.ForeignKey(
         Teacher,
         on_delete=models.CASCADE,
@@ -38,10 +38,10 @@ class TeacherPublished(TimeStampMixin):
         return str(self.published[:50] + self.publisher[:50])
 
     class Meta:
-        db_table = "teachers_teacher_published"
+        db_table = "teacher_published"
 
 
-class TeacherEducation(TimeStampMixin):
+class Education(TimeStampMixin):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     education = models.CharField(max_length=300)
     university = models.CharField(max_length=300)
@@ -50,4 +50,4 @@ class TeacherEducation(TimeStampMixin):
         return str(self.education[:50] + self.university[:50])
 
     class Meta:
-        db_table = "teachers_teacher_education"
+        db_table = "teacher_education"

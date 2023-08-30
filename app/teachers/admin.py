@@ -1,17 +1,18 @@
 from django.contrib import admin
 
-from .models import Teacher, TeacherPublished, TeacherEducation
+from .models import Teacher, Published, Education
 from courses.models import Course
+
 # Register your models here.
 
 
 class TeacherPublishedInline(admin.TabularInline):
-    model = TeacherPublished
+    model = Published
     extra = 1
 
 
 class TeacherEducationInline(admin.TabularInline):
-    model = TeacherEducation
+    model = Education
     extra = 1
 
 
@@ -21,7 +22,7 @@ class TeacherAdmin(admin.ModelAdmin):
         TeacherEducationInline,
         TeacherPublishedInline,
     ]
-    ordering = ('-user', )
-    list_display = ('user', 'experience')
-    list_filter = ('experience', )
-    raw_id_fields = ('user',)
+    ordering = ("-user",)
+    list_display = ("user", "experience")
+    list_filter = ("experience",)
+    raw_id_fields = ("user",)

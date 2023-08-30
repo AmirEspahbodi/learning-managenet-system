@@ -37,7 +37,7 @@ class Course(TimeStampMixin):
         verbose_name="ID",
         db_index=True,
     )
-    group_course_number = models.PositiveSmallIntegerField()
+    course_number = models.PositiveSmallIntegerField()
     course_title = models.ForeignKey(
         CourseTitle, on_delete=models.PROTECT, related_name="courses"
     )
@@ -47,7 +47,7 @@ class Course(TimeStampMixin):
     tuition = models.DecimalField(
         max_digits=14, decimal_places=3, help_text="course tuition"
     )
-    percentage_required_for_tuition = models.DecimalField(
+    tuition_percentage = models.DecimalField(
         default=100,
         max_digits=6,
         decimal_places=3,
@@ -57,7 +57,7 @@ class Course(TimeStampMixin):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["course_title", "group_course_number", "semester"],
+                fields=["course_title", "course_number", "semester"],
                 name="unique_course",
             )
         ]
@@ -69,7 +69,7 @@ class Course(TimeStampMixin):
         return str(date2jalali(self.start_date))
 
     def __str__(self):
-        return f"{self.course_title.title} {self.group_course_number} {self.semester}"
+        return f"{self.course_title.title} {self.course_number} {self.semester}"
 
     def __unicode__(self):
         return self.__str__()
@@ -140,7 +140,6 @@ class Session(TimeStampMixin):
     time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE)
     description = models.TextField(blank=True)
     title = models.CharField(blank=True, max_length=300)
-    create_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [

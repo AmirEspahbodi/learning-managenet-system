@@ -107,13 +107,13 @@ def run():
 
     courses: list[Course] = [
         Course.objects.create(
-            group_course_number=j,
+            course_number=j,
             course_title=coursetitles[i],
             semester=semesters[0],
             start_date=date(year=2023, month=6, day=1),
             end_date=date(year=2023, month=9, day=1),
             tuition=10000000,
-            percentage_required_for_tuition=27.5,
+            tuition_percentage=27.5,
         )
         for j in range(1, 4)
         for i in range(0, 3)

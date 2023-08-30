@@ -16,6 +16,7 @@ from accounts.validators import (
     PostalCodeValidator,
 )
 from phonenumber_field import modelfields
+from core.db.mixins.timestamp import TimeStampMixin
 
 
 def create_username():
@@ -77,7 +78,7 @@ class MyUserManager(UserManager):
         return self._create_user(username, email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(TimeStampMixin, AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(_("first name"), max_length=150, blank=True)
     last_name = models.CharField(_("last name"), max_length=150, blank=True)
     email = models.EmailField(
@@ -170,7 +171,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return f"{self.username}"
 
 
-class UserInformation(models.Model):
+class UserInformation(TimeStampMixin):
     user = models.OneToOneField(
         User, primary_key=True, on_delete=models.CASCADE, related_name="user_info"
     )

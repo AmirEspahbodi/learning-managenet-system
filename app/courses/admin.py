@@ -10,71 +10,91 @@ from assignments.models import Assignment
 
 # INLINES
 class CourseInline(admin.TabularInline):
-    ordering = ('start_date', )
+    ordering = ("start_date",)
     model = Course
     extra = 1
 
 
 class MemberShipInline(admin.TabularInline):
-    ordering = ('-role', )
+    ordering = ("-role",)
     model = MemberShip
     extra = 5
 
 
 class CourseTimeInline(admin.TabularInline):
-    ordering = ('-time_slot__day', '-time_slot__start')
+    ordering = ("-time_slot__day", "-time_slot__start")
     model = CourseTime
     extra = 2
 
 
-
 class SessionInline(admin.TabularInline):
-    ordering = ('date', '-time_slot__start')
+    ordering = ("date", "-time_slot__start")
     model = Session
     extra = 2
 
 
 @admin.register(CourseTitle)
 class CourseAdmin(admin.ModelAdmin):
-    inlines = [
-        CourseInline
-    ]
-    list_display = ('id', 'title')
+    inlines = [CourseInline]
+    list_display = ("id", "title")
 
 
 @admin.register(Course)
 class GroupCourseAdmin(admin.ModelAdmin):
-    raw_id_fields = ("course_title", 'semester')
+    raw_id_fields = ("course_title", "semester")
     inlines = [
         MemberShipInline,
         CourseTimeInline,
         SessionInline,
     ]
     fieldsets = (
-        (None, {
-            'fields': ('course_title', 'group_course_number', 'semester', ),
-        }
+        (
+            None,
+            {
+                "fields": (
+                    "course_title",
+                    "course_number",
+                    "semester",
+                ),
+            },
         ),
-        (_('time'), {
-            'fields': ('start_date', 'end_date'),
-        }
+        (
+            _("time"),
+            {
+                "fields": ("start_date", "end_date"),
+            },
         ),
-        (_('tuition'), {
-            'fields': ('tuition', 'percentage_required_for_tuition',),
-        }
-        )
+        (
+            _("tuition"),
+            {
+                "fields": (
+                    "tuition",
+                    "tuition_percentage",
+                ),
+            },
+        ),
     )
     add_fieldsets = (
-        (None, {'fields': ('course_title', 'group_course_number',
-         'semester', 'tuition', 'percentage_required_for_tuition')}),
+        (
+            None,
+            {
+                "fields": (
+                    "course_title",
+                    "course_number",
+                    "semester",
+                    "tuition",
+                    "tuition_percentage",
+                )
+            },
+        ),
     )
-    list_display = ('course_title', 'group_course_number', 'semester')
-    list_filter = ('course_title__title', 'semester__semester_id')
+    list_display = ("course_title", "course_number", "semester")
+    list_filter = ("course_title__title", "semester__semester_id")
 
 
 @admin.register(CourseTime)
 class GroupCourseTimesAdmin(admin.ModelAdmin):
-    list_display = ('course', 'semester', 'time_slot')
+    list_display = ("course", "semester", "time_slot")
 
 
 class SessionAssignmentInline(admin.TabularInline):
@@ -89,9 +109,11 @@ class SessionExamsInline(admin.TabularInline):
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
-    inlines = [
-        SessionAssignmentInline, SessionExamsInline
-    ]
-    ordering = ('-date', '-time_slot__start',)
+    inlines = [SessionAssignmentInline, SessionExamsInline]
+    ordering = (
+        "-date",
+        "-time_slot__start",
+    )
+
 
 admin.site.register(MemberShip)

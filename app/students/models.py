@@ -49,5 +49,5 @@ class FinancialAids(TimeStampMixin):
                 fields=["student", "course"], name="unique_student_course"
             )
         ]
-        db_table = "students_student_enroll"
-        db_table_comment = "It shows the student's enrollment in the course"
+        db_table = "students_financial_aids"
+        db_table_comment = "It shows the student's financial aids in the course"
