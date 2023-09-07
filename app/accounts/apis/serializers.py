@@ -16,7 +16,7 @@ from accounts.validators import (
 from accounts.validators import (
     NationalCodeValidator,
     PostalCodeValidator,
-    HomePhoneNumberValidator
+    HomePhoneNumberValidator,
 )
 from accounts.app_settings import account_settings
 from accounts.models import UserInformation, PasswordResetCode
@@ -82,7 +82,7 @@ class PasswordChangeSerializer(serializers.Serializer):
         invalid_password_conditions = (
             self.old_password_field_enabled,
             self.user,
-            not self.user.check_password(value),
+            self.user.check_password(value),
         )
 
         if all(invalid_password_conditions):
@@ -157,7 +157,7 @@ class UserRegisterL2Serializer(serializers.ModelSerializer):
     national_code = serializers.CharField(validators=[NationalCodeValidator])
     postal_code = serializers.CharField(validators=[PostalCodeValidator])
     home_phone_number = serializers.CharField(validators=[HomePhoneNumberValidator])
-            
+
     class Meta:
         model = UserInformation
         fields = (
@@ -192,7 +192,7 @@ class UserRegisterL2Serializer(serializers.ModelSerializer):
             father_name=validated_data.get("father_name"),
             home_phone_number=validated_data.get("home_phone_number"),
         )
-        
+
         return userInformation
 
 
@@ -288,6 +288,7 @@ class UserSerializerNames(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ("id", "first_name", "last_name")
+
 
 class UserSerializerBaseInfo(serializers.ModelSerializer):
     class Meta:

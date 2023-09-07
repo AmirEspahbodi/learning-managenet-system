@@ -9,7 +9,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ('user', 'experience')
+        fields = ("user", "experience")
 
 
 class StudentAccessSerializer(serializers.Serializer):

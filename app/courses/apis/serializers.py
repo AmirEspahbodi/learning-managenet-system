@@ -61,7 +61,7 @@ class CourseSerializer(ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         teacher_members: list[MemberShip] = MemberShip.objects.filter(
-            Q(id=representation["id"])
+            Q(course_id=representation["id"])
             & (Q(role=MemberShipRoles.TEACHER) | Q(role=MemberShipRoles.INSTRUCTOR))
         ).select_related("user")
         representation["teachers"] = [

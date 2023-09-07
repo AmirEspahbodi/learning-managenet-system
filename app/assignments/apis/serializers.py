@@ -115,6 +115,7 @@ class AssignmentRequestSerializer(serializers.ModelSerializer):
 class AssignmentFTQuestionAnswerUpdateSerializer(serializers.ModelSerializer):
     answer_text = fields.CharField(required=False)
     answer_file = fields.FileField(required=False)
+    accessing_at = fields.DateTimeField(required=False)
 
     class Meta:
         model = FTQuestionAnswer

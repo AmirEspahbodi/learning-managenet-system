@@ -45,6 +45,7 @@ from assignments.apis.serializers import (
     MemberAssignmentFTQuestionScoreSerializer,
     AssignmentFTQuestionRequestSerializer,
     MemberTakeAssignmentSerilizer,
+    AssignmentFTQuestionAnswerUpdateSerializer,
 )
 from assignments.models import (
     MemberAssignmentFTQuestion,
@@ -126,6 +127,9 @@ class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):
         serializer = FinancialAidsResultSerializer(data=request.data)
         serializer.is_valid()
         data = serializer.data
+        print("\n\n")
+        print(data)
+        print("\n\n")
         try:
             user = User.objects.get(id=data["user_id"])
         except ObjectDoesNotExist:
@@ -394,6 +398,13 @@ class TeacherMemberExamFtQuestionAPIView(GenericAPIView):
         return Response(data={"message": "Ok"}, status=status.HTTP_200_OK)
 
 
+class TeacherExamFindCheetersAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+
 ########## ASSIGNMENTS
 
 
@@ -495,6 +506,7 @@ class TeacherAssignmentQuestionAPIView(IsRelativeTeacherMixin, GenericAPIView):
 
 class TeacherAssignmentFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAPIView):
     serializer_class = AssignmentFTQuestionAnswerSerializer
+    permission_classes = [IsTeacher]
 
     def post(self, request, *args, **kwargs):
         if "assignment_ftquestion_id" not in kwargs:
@@ -521,7 +533,7 @@ class TeacherAssignmentFtQuestionAnswerAPIView(IsRelativeTeacherMixin, GenericAP
     def put(self, request, *args, **kwargs):
         if "assignment_ftquestion_answer_id" not in kwargs:
             raise exceptions.MethodNotAllowed()
-        serializer = self.serializer_class(
+        serializer = AssignmentFTQuestionAnswerUpdateSerializer(
             instance=self.assignment_ftquestionanswer, data=request.data
         )
         if serializer.is_valid():

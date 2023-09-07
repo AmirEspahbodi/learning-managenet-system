@@ -5,6 +5,7 @@ from .views import (
     TeacherSessionDetailAPIView,
     TeacherHomeAPIView,
     TeacherExamAPIView,
+    TeacherExamFindCheetersAPIView,
     TeacherExamQuestionAPIView,
     TeacherExamFtQuestionAnswerAPIView,
     TeacherGetMemberExamAPIView,
@@ -46,6 +47,11 @@ urlpatterns = [
         "exam/<int:exam_id>/",
         TeacherExamAPIView.as_view(),
         name="exam",
+    ),
+    path(
+        "exam/<int:exam_id>/cheeters",
+        TeacherExamFindCheetersAPIView.as_view(),
+        name="exam_cheeters",
     ),
     path(
         "exam/<int:exam_id>/members/",
