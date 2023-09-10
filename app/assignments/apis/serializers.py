@@ -2,7 +2,18 @@ from django.utils import timezone
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.fields import empty
-from ..models import Assignment
+from rest_framework import serializers, fields
+from rest_framework.exceptions import ValidationError
+from ..models import (
+    Assignment,
+    FTQuestion,
+    FTQuestionAnswer,
+    FTQuestion,
+    MemberAssignmentFTQuestion,
+    MemberTakeAssignment,
+)
+from courses.models import MemberShip
+from accounts.apis.serializers import UserSerializerBaseInfo
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
@@ -16,18 +27,6 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "start_at",
             "end_at",
         )
-
-
-from rest_framework import serializers, fields
-from rest_framework.exceptions import ValidationError
-from ..models import (
-    Assignment,
-    FTQuestion,
-    FTQuestionAnswer,
-    FTQuestion,
-    MemberAssignmentFTQuestion,
-    MemberTakeAssignment,
-)
 
 
 class AssignmentFTQuestionUpdateSerializer(serializers.ModelSerializer):
@@ -241,9 +240,10 @@ class MemberAssignmentFTQuestionScoreSerializer(serializers.Serializer):
 
 
 class MemberAssignmentFTQuestionSerializer(serializers.ModelSerializer):
-    class Config:
+    class Meta:
         model = MemberAssignmentFTQuestion
         fields = (
+            "id",
             "score",
             "answered_text",
             "answered_file",
@@ -255,9 +255,10 @@ class MemberAssignmentFTQuestionSerializer(serializers.ModelSerializer):
 class MemberTakeAssignmentSerilizer(serializers.ModelSerializer):
     member_take_assignment_ftquestions = MemberAssignmentFTQuestionSerializer()
 
-    class Config:
+    class Meta:
         model = MemberTakeAssignment
         fields = (
+            "id",
             "last_visit",
             "finish_at",
             "score",
@@ -374,3 +375,68 @@ class StudentAssignmentFtQuestionWithAnswerRersponseSerilizer(
             for ftquestions_answer in ftquestions_answers
         ]
         return representation
+
+
+class MemberShipSerializer(serializers.ModelSerializer):
+    user = UserSerializerBaseInfo()
+
+    class Meta:
+        model = MemberShip
+        fields = ("role", "user")
+
+
+class MemberTakeAssignmentSerializer(serializers.ModelSerializer):
+    member = MemberShipSerializer()
+
+    class Meta:
+        model = MemberTakeAssignment
+        fields = ["member"]
+
+
+class AssignmentMeberAnswerForSimilaritySerializer(serializers.ModelSerializer):
+    member_take_assignment = MemberTakeAssignmentSerializer()
+
+    class Meta:
+        model = MemberAssignmentFTQuestion
+        fields = (
+            "id",
+            "answered_text",
+            "answered_file",
+            "score",
+            "member_take_assignment",
+        )
+
+
+class MemberAssignmentFTQuestionSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberAssignmentFTQuestion
+        fields = (
+            "id",
+            "answered_text",
+            "answered_file",
+            "score",
+        )
+
+
+class AssignmentFTQuestionUpdateSerializer(serializers.ModelSerializer):
+    member_answers = MemberAssignmentFTQuestionSerilizer(many=True)
+
+    class Meta:
+        model = FTQuestion
+        fields = ("id", "title", "text", "file", "start_at", "end_at", "member_answers")
+
+
+class AssignemntForGetMemberList(serializers.ModelSerializer):
+    ftquestions = AssignmentFTQuestionUpdateSerializer(many=True)
+
+    class Meta:
+        model = Assignment
+        fields = (
+            "id",
+            "session",
+            "description",
+            "ftquestions",
+            "assignment_number",
+            "start_at",
+            "end_at",
+        )

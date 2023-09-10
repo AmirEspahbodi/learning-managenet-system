@@ -27,6 +27,8 @@ from exams.apis.serializers import (
     MemberExamFTQuestionSerializer,
     MemberExamFTQuestionScoreSerializer,
     MemberTakeExamSerilizer,
+    AssignemntForGetMemberList,
+    ExamMeberAnswerForSimilaritySerializer,
 )
 from exams.models import (
     MemberExamFTQuestion,
@@ -46,6 +48,8 @@ from assignments.apis.serializers import (
     AssignmentFTQuestionRequestSerializer,
     MemberTakeAssignmentSerilizer,
     AssignmentFTQuestionAnswerUpdateSerializer,
+    AssignmentMeberAnswerForSimilaritySerializer,
+    AssignemntForGetMemberList,
 )
 from assignments.models import (
     MemberAssignmentFTQuestion,
@@ -56,6 +60,7 @@ from contents.apis.serializers import (
     ContentResponseSerializer,
     ContentUpdateSerializer,
 )
+from scripts.tf_idf_document_similarity import find_cheeters
 
 User = get_user_model()
 
@@ -157,6 +162,46 @@ class TeacherFinancialAidsAPIView(IsRelativeTeacherMixin, GenericAPIView):
                 )
 
         return Response(data={"message": "OK"}, status=status.HTTP_200_OK)
+
+
+class TeacherExamFindSimilarAnswersAPIView(IsRelativeTeacherMixin, GenericAPIView):
+    def get(self, *args, **kwargs):
+        exam_ftquestions = self.exam.ftquestions.all()
+        response = {
+            "id": self.exam.id,
+            "title": self.exam.title,
+            "description": self.exam.description,
+            "ftquestions": [],
+        }
+        for ftquestion in exam_ftquestions:
+            similar_answers = []
+            member_ftquestion_answers = ftquestion.member_answers.all()
+            member_ftquestion_answers_texts = [
+                member_ftquestion_answer.answered_text
+                for member_ftquestion_answer in member_ftquestion_answers
+            ]
+            result = find_cheeters(member_ftquestion_answers_texts)
+            full_result = [
+                {
+                    "answer1": ExamMeberAnswerForSimilaritySerializer(
+                        member_ftquestion_answers[i]
+                    ).data,
+                    "answer2": ExamMeberAnswerForSimilaritySerializer(
+                        member_ftquestion_answers[result[i][0]]
+                    ).data,
+                    "similarity": result[i][1],
+                }
+                for i in range(len(result) - 1)
+                if len(result[i]) != 0
+            ]
+            response["ftquestions"].append(
+                {
+                    "id": ftquestion.id,
+                    "text": ftquestion.text,
+                    "similar_answers": full_result,
+                }
+            )
+        return Response(data=response, status=status.HTTP_200_OK)
 
 
 ########## EXAM
@@ -311,9 +356,8 @@ class TeacherListMemberExamAPIView(IsRelativeTeacherMixin, GenericAPIView):
     permission_classes = [IsTeacher]
 
     def get(self, request, *args, **kwargs):
-        member_exams = MemberTakeExam.objects.filter(exam=self.exam)
         return Response(
-            data=MemberTakeExamSerilizer(member_exams, many=True).data,
+            data=AssignemntForGetMemberList(self.exam).data,
             status=status.HTTP_200_OK,
         )
 
@@ -615,12 +659,8 @@ class TeacherListMemberAssignmentAPIView(IsRelativeTeacherMixin, GenericAPIView)
     permission_classes = [IsTeacher]
 
     def get(self, request, *args, **kwargs):
-        member_assignments = MemberTakeAssignment.objects.filter(
-            assignment=self.assignment
-        )
-
         return Response(
-            data=MemberTakeAssignmentSerilizer(member_assignments, many=True).data,
+            data=AssignemntForGetMemberList(self.assignment).data,
             status=status.HTTP_200_OK,
         )
 
@@ -651,6 +691,48 @@ class TeacherGetMemberAssignmentAPIView(GenericAPIView):
             data=MemberTakeAssignmentSerilizer(member_assignment).data,
             status=status.HTTP_200_OK,
         )
+
+
+class TeacherAssignmentFindSimilarAnswersAPIView(
+    IsRelativeTeacherMixin, GenericAPIView
+):
+    def get(self, *args, **kwargs):
+        assignment_ftquestions = self.assignment.ftquestions.all()
+        response = {
+            "id": self.assignment.id,
+            "title": self.assignment.title,
+            "description": self.assignment.description,
+            "ftquestions": [],
+        }
+        for ftquestion in assignment_ftquestions:
+            similar_answers = []
+            member_ftquestion_answers = ftquestion.member_answers.all()
+            member_ftquestion_answers_texts = [
+                member_ftquestion_answer.answered_text
+                for member_ftquestion_answer in member_ftquestion_answers
+            ]
+            result = find_cheeters(member_ftquestion_answers_texts)
+            full_result = [
+                {
+                    "answer1": AssignmentMeberAnswerForSimilaritySerializer(
+                        member_ftquestion_answers[i]
+                    ).data,
+                    "answer2": AssignmentMeberAnswerForSimilaritySerializer(
+                        member_ftquestion_answers[result[i][0]]
+                    ).data,
+                    "similarity": result[i][1],
+                }
+                for i in range(len(result) - 1)
+                if len(result[i]) != 0
+            ]
+            response["ftquestions"].append(
+                {
+                    "id": ftquestion.id,
+                    "text": ftquestion.text,
+                    "similar_answers": full_result,
+                }
+            )
+        return Response(data=response, status=status.HTTP_200_OK)
 
 
 ##############  CONTENT

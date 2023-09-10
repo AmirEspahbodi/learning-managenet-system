@@ -12,6 +12,8 @@ from ..models import (
     MemberExamFTQuestion,
     MemberTakeExam,
 )
+from courses.models import MemberShip
+from accounts.apis.serializers import UserSerializerBaseInfo
 
 
 class ExamSerializer(serializers.ModelSerializer):
@@ -356,3 +358,62 @@ class StudentExamFtQuestionWithAnswerRersponseSerilizer(
             for ftquestions_answer in ftquestions_answers
         ]
         return representation
+
+
+class MemberExamFTQuestionSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = MemberExamFTQuestion
+        fields = (
+            "id",
+            "answered_text",
+            "answered_file",
+            "score",
+        )
+
+
+class ExamFTQuestionUpdateSerializer(serializers.ModelSerializer):
+    member_answers = MemberExamFTQuestionSerilizer(many=True)
+
+    class Meta:
+        model = FTQuestion
+        fields = ("id", "title", "text", "file", "start_at", "end_at", "member_answers")
+
+
+class AssignemntForGetMemberList(serializers.ModelSerializer):
+    ftquestions = ExamFTQuestionUpdateSerializer(many=True)
+
+    class Meta:
+        model = Exam
+        fields = (
+            "id",
+            "session",
+            "description",
+            "ftquestions",
+            "exam_number",
+            "start_at",
+            "end_at",
+        )
+
+
+class MemberShipSerializer(serializers.ModelSerializer):
+    user = UserSerializerBaseInfo()
+
+    class Meta:
+        model = MemberShip
+        fields = ("role", "user")
+
+
+class MemberTakeExamSerializer(serializers.ModelSerializer):
+    member = MemberShipSerializer()
+
+    class Meta:
+        model = MemberTakeExam
+        fields = ["member"]
+
+
+class ExamMeberAnswerForSimilaritySerializer(serializers.ModelSerializer):
+    member_take_exam = MemberTakeExamSerializer()
+
+    class Meta:
+        model = MemberExamFTQuestion
+        fields = ("id", "answered_text", "answered_file", "score", "member_take_exam")

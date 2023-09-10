@@ -16,11 +16,15 @@ from assignments.models import (
     Assignment,
     FTQuestion as AssignmentFTQuestion,
     FTQuestionAnswer as AssignmentFTQuestionAnswer,
+    MemberTakeAssignment,
+    MemberAssignmentFTQuestion,
 )
 from exams.models import (
     Exam,
     FTQuestion as ExamFTQuestion,
     FTQuestionAnswer as ExamFTQuestionAnswer,
+    MemberTakeExam,
+    MemberExamFTQuestion,
 )
 from teachers.models import Teacher
 from students.models import Student
@@ -167,7 +171,7 @@ def run():
                 ExamFTQuestion(
                     exam=exam,
                     title="simple question",
-                    text="simple question {i} for exam {exam}",
+                    text=f"simple question {i} for exam {exam}",
                     start_at=current_time,
                     end_at=two_week_later,
                 )
@@ -197,7 +201,7 @@ def run():
                 AssignmentFTQuestion(
                     assignment=assignment,
                     title="simple question",
-                    text="simple question {i} for assignment {assignment}",
+                    text=f"simple question {i} for assignment {assignment}",
                     start_at=current_time,
                     end_at=two_week_later,
                 )
@@ -216,3 +220,64 @@ def run():
             )
         AssignmentFTQuestionAnswer.objects.bulk_create(assignment_question_answers)
     print(f"for sessions {sessions} exam ans assignment created")
+
+    # create SOME MEMBER ANSWER for assignment with id 11 ans ftquestion with id 42 ans exam with 11 11 and exam ftquestion with id 38
+    # for student0
+    asnwers = [
+        {"student": "student0", "answer": "Reading is a great way to relax."},
+        {"student": "student1", "answer": "I love to read books."},
+        {"student": "student2", "answer": "Programming is my passion."},
+        {"student": "student3", "answer": "Traveling broadens the mind."},
+        {"student": "student4", "answer": "Music is the universal language."},
+        {"student": "student5", "answer": "programming is my favorite job"},
+    ]
+
+    print("create member answer for assignment 11 and first ftquestion")
+
+    assignment = Assignment.objects.get(id=11)
+    assignment_ftquestion = AssignmentFTQuestion.objects.filter(
+        assignment=assignment
+    ).first()
+
+    for answer in asnwers:
+        pass
+        member = MemberShip.objects.get(user__username=answer["student"], course_id=1)
+        member_take_assignemnt = MemberTakeAssignment.objects.create(
+            assignment=assignment,
+            member=member,
+            last_visit=timezone.now(),
+            finish_at=timezone.now(),
+            score=None,
+        )
+        MemberAssignmentFTQuestion.objects.create(
+            member_take_assignment=member_take_assignemnt,
+            ft_question=assignment_ftquestion,
+            answered_text=answer["answer"],
+            answered_file=None,
+            score=None,
+        )
+    print("member answer for assignment 11 and first ftquestion created")
+
+    print("create member answer for assignment 11 and first ftquestion")
+
+    exam = Exam.objects.get(id=11)
+    exam_ftquestion = ExamFTQuestion.objects.filter(exam=exam).first()
+
+    for answer in asnwers:
+        pass
+        member = MemberShip.objects.get(user__username=answer["student"], course_id=1)
+        member_take_assignemnt = MemberTakeExam.objects.create(
+            exam=exam,
+            member=member,
+            last_visit=timezone.now(),
+            finish_at=timezone.now(),
+            score=None,
+        )
+        MemberExamFTQuestion.objects.create(
+            member_take_exam=member_take_assignemnt,
+            ft_question=exam_ftquestion,
+            answered_text=answer["answer"],
+            answered_file=None,
+            score=None,
+        )
+    print("member answer for exam 11 and first ftquestion created")

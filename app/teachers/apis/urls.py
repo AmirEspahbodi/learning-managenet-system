@@ -18,6 +18,8 @@ from .views import (
     TeacherListMemberAssignmentAPIView,
     TeacherMemberAssignmentFtQuestionAPIView,
     TeacherContentAPIView,
+    TeacherExamFindSimilarAnswersAPIView,
+    TeacherAssignmentFindSimilarAnswersAPIView,
 )
 
 
@@ -142,5 +144,15 @@ urlpatterns = [
         "content/<int:content_id>/",
         TeacherContentAPIView.as_view(),
         name="content",
+    ),
+    path(
+        "assignment/<int:assignment_id>/similar-answers",
+        TeacherAssignmentFindSimilarAnswersAPIView.as_view(),
+        name="assignemnt_similar_aswers",
+    ),
+    path(
+        "exam/<int:exam_id>/similar-answers",
+        TeacherExamFindSimilarAnswersAPIView.as_view(),
+        name="exam_similar_aswers",
     ),
 ]

@@ -111,7 +111,7 @@ class MemberExamFTQuestion(TimeStampMixin):
         related_name="member_take_exam_ftquestions",
     )
     ft_question = models.ForeignKey(
-        FTQuestion, on_delete=models.CASCADE, related_name="student_answers"
+        FTQuestion, on_delete=models.CASCADE, related_name="member_answers"
     )
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     answered_text = models.TextField(null=True, blank=True)

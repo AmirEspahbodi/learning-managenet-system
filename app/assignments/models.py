@@ -117,7 +117,9 @@ class MemberAssignmentFTQuestion(TimeStampMixin):
         on_delete=models.CASCADE,
         related_name="member_take_assignment_ftquestions",
     )
-    ft_question = models.ForeignKey(FTQuestion, on_delete=models.CASCADE)
+    ft_question = models.ForeignKey(
+        FTQuestion, on_delete=models.CASCADE, related_name="member_answers"
+    )
     answered_text = models.TextField(null=True, blank=True)
     answered_file = models.FileField(
         upload_to="assignment/students/answers/", null=True, blank=True
@@ -135,4 +137,4 @@ class MemberAssignmentFTQuestion(TimeStampMixin):
         db_table_comment = "This table stores the student's answer to the assignment file/text question"
 
     def __str__(self):
-        return f"student assignment question answer: {self.member_take_assignment.assignment} {self.ft_question.title} {datetime2jalali(self.finish_at)}"
+        return f"student assignment question answer: {self.member_take_assignment.assignment} {self.ft_question.title}"
