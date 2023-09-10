@@ -114,8 +114,8 @@ def run():
             course_number=j,
             course_title=coursetitles[i],
             semester=semesters[0],
-            start_date=date(year=2023, month=6, day=1),
-            end_date=date(year=2023, month=9, day=1),
+            start_date=date.today(),
+            end_date=(timezone.now() + timedelta(weeks=12)).date(),
             tuition=10000000,
             tuition_percentage=27.5,
         )
