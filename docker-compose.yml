@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    command: poetry run python app/manage.py runserver 0.0.0.0:8000
+#    command: tree
+    volumes:
+      - ./app/:/server/app
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env
