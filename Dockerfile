@@ -39,7 +39,7 @@ RUN mkdir server
 WORKDIR /server
 
 # Copy Dependencies
-COPY poetry.lock pyproject.toml README.md ./
+COPY poetry.lock pyproject.toml README.md .env ./
 
 # [OPTIONAL] Validate the project is properly configured
 RUN poetry check
