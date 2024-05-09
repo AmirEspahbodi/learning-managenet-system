@@ -4,11 +4,12 @@ services:
     build:
       context: .
       dockerfile: docker/auth.Dockerfile
-    command: poetry run python manage.py runserver 0.0.0.0:8000
+    command: poetry run python manage.py runserver 0.0.0.0:8082
+#    command: sleep infinity
     volumes:
       - ./services/auth/:/auth
     ports:
-      - 8000:8000
+      - 8082:8082
     env_file:
       - ./services/auth/.env
     depends_on:
@@ -20,15 +21,12 @@ services:
     container_name: postgres
     image: postgres:latest
     restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-      PGDATA: /var/lib/postgresql/data
+    env_file:
+      - ./.env
     volumes:
     - postgres_data:/var/lib/postgresql/data
-    ports:
-    - "5432:5432"
+#    ports:
+#    - "5432:5432"
 
   pgadmin:
     container_name: pgadmin

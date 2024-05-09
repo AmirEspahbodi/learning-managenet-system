@@ -7,8 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-django = "^5.0.4"
 environs = {extras = ["django"], version = "^11.0.0"}
+psycopg = {extras = ["binary"], version = "^3.1.18"}
+django = "^4.2"
 
 
 [build-system]

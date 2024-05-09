@@ -396,3 +396,6 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,django,pycharm
+
+**/**.my_pgpass
+**/**.pg_service.conf
