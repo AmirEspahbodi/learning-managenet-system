@@ -35,11 +35,11 @@ COPY --from=poetry-base ${POETRY_VENV} ${POETRY_VENV}
 # Add Poetry to PATH
 ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
-RUN mkdir server
-WORKDIR /server
+RUN mkdir auth
+WORKDIR /auth
 
 # Copy Dependencies
-COPY poetry.lock pyproject.toml README.md ./
+COPY ./services/auth ./
 
 # [OPTIONAL] Validate the project is properly configured
 RUN poetry check
@@ -47,6 +47,3 @@ RUN poetry check
 # Install Dependencies
 RUN poetry install --no-interaction --no-cache
 
-# copy source code
-RUN mkdir /server/app/
-COPY app/ /server/app/

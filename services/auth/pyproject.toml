@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "auth-api"
+version = "0.1.0"
+description = "auth api for school management system"
+authors = ["a.espahbodi <dev.amir.espahbodi@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "^5.0.4"
+environs = {extras = ["django"], version = "^11.0.0"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
