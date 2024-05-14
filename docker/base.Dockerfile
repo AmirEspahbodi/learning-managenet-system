@@ -7,6 +7,7 @@ ENV APP_USER=python_user
 
 RUN groupadd -r $APP_USER && \
     useradd -r -g $APP_USER -d $APP_HOME -s /sbin/nologin -c "Docker image user" $APP_USER
+RUN usermod -aG sudo $APP_USER
 
 WORKDIR $APP_HOME
 
@@ -24,11 +25,11 @@ ENV PYTHONUNBUFFERED 1
 
 # https://python-poetry.org/docs#ci-recommendations
 ENV POETRY_VERSION=1.8.2
-ENV POETRY_HOME=/opt/poetry
-ENV POETRY_VENV=/opt/poetry-venv
+ENV POETRY_HOME=$APP_HOME/poetry
+ENV POETRY_VENV=$APP_HOME/poetry-venv
 
 # Tell Poetry where to place its cache and virtual environment
-ENV POETRY_CACHE_DIR=/opt/.cache
+ENV POETRY_CACHE_DIR=$APP_HOME/.poetry-cache
 
 # install container needeed packages
 RUN apt-get update && apt-get install tree

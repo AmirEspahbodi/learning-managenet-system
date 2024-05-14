@@ -20,6 +20,7 @@ sqlalchemy = "^2.0.29"
 alembic = "^1.13.1"
 asyncpg = "^0.29.0"
 environs = {extras = ["django"], version = "^11.0.0"}
+psycopg = {extras = ["binary"], version = "^3.1.19"}
 
 
 [build-system]
