@@ -72,6 +72,51 @@ files = [
 ]
 
 [[package]]
+name = "django-phonenumber-field"
+version = "7.3.0"
+description = "An international phone number field for django models."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "django-phonenumber-field-7.3.0.tar.gz", hash = "sha256:f9cdb3de085f99c249328293a3b93d4e5fa440c0c8e3b99eb0d0f54748629797"},
+    {file = "django_phonenumber_field-7.3.0-py3-none-any.whl", hash = "sha256:bc6eaa49d1f9d870944f5280258db511e3a1ba5e2fbbed255488dceacae45d06"},
+]
+
+[package.dependencies]
+Django = ">=3.2"
+
+[package.extras]
+phonenumbers = ["phonenumbers (>=7.0.2)"]
+phonenumberslite = ["phonenumberslite (>=7.0.2)"]
+
+[[package]]
+name = "django-phonenumbers"
+version = "1.0.1"
+description = "Phone number field for Django admin"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_phonenumbers-1.0.1-py3-none-any.whl", hash = "sha256:cd617e4ee924f6492e0106d738fea619c95f3659e41dbeb97df83c1f3b51f453"},
+]
+
+[package.dependencies]
+phonenumbers = "*"
+
+[[package]]
+name = "djangorestframework"
+version = "3.15.1"
+description = "Web APIs for Django, made easy."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "djangorestframework-3.15.1-py3-none-any.whl", hash = "sha256:3ccc0475bce968608cf30d07fb17d8e52d1d7fc8bfe779c905463200750cbca6"},
+    {file = "djangorestframework-3.15.1.tar.gz", hash = "sha256:f88fad74183dfc7144b2756d0d2ac716ea5b4c7c9840995ac3bfd8ec034333c1"},
+]
+
+[package.dependencies]
+django = ">=3.0"
+
+[[package]]
 name = "environs"
 version = "11.0.0"
 description = "simplified environment variable parsing"
@@ -122,6 +167,17 @@ python-versions = ">=3.7"
 files = [
     {file = "packaging-24.0-py3-none-any.whl", hash = "sha256:2ddfb553fdf02fb784c234c7ba6ccc288296ceabec964ad2eae3777778130bc5"},
     {file = "packaging-24.0.tar.gz", hash = "sha256:eb82c5e3e56209074766e6885bb04b8c38a0c015d0a30036ebe7ece34c9989e9"},
+]
+
+[[package]]
+name = "phonenumbers"
+version = "8.13.37"
+description = "Python version of Google's common library for parsing, formatting, storing and validating international phone numbers."
+optional = false
+python-versions = "*"
+files = [
+    {file = "phonenumbers-8.13.37-py2.py3-none-any.whl", hash = "sha256:4ea00ef5012422c08c7955c21131e7ae5baa9a3ef52cf2d561e963f023006b80"},
+    {file = "phonenumbers-8.13.37.tar.gz", hash = "sha256:bd315fed159aea0516f7c367231810fe8344d5bec26156b88fa18374c11d1cf2"},
 ]
 
 [[package]]
@@ -271,7 +327,32 @@ files = [
     {file = "tzdata-2024.1.tar.gz", hash = "sha256:2674120f8d891909751c38abcdfd386ac0a5a1127954fbc332af6b5ceae07efd"},
 ]
 
+[[package]]
+name = "ua-parser"
+version = "0.18.0"
+description = "Python port of Browserscope's user agent parser"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ua-parser-0.18.0.tar.gz", hash = "sha256:db51f1b59bfaa82ed9e2a1d99a54d3e4153dddf99ac1435d51828165422e624e"},
+    {file = "ua_parser-0.18.0-py2.py3-none-any.whl", hash = "sha256:9d94ac3a80bcb0166823956a779186c746b50ea4c9fd9bf30fdb758553c38950"},
+]
+
+[[package]]
+name = "user-agents"
+version = "2.2.0"
+description = "A library to identify devices (phones, tablets) and their capabilities by parsing browser user agent strings."
+optional = false
+python-versions = "*"
+files = [
+    {file = "user-agents-2.2.0.tar.gz", hash = "sha256:d36d25178db65308d1458c5fa4ab39c9b2619377010130329f3955e7626ead26"},
+    {file = "user_agents-2.2.0-py3-none-any.whl", hash = "sha256:a98c4dc72ecbc64812c4534108806fb0a0b3a11ec3fd1eafe807cee5b0a942e7"},
+]
+
+[package.dependencies]
+ua-parser = ">=0.10.0"
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "d01e16f8d5ef82478ed3e405a78503fa27ffa44b62c00edddabc2375155b601b"
+content-hash = "80dba2e7a39f35e4e43b803f53566323065374244c18f4c628c3201e737b6cba"

@@ -5,7 +5,7 @@ RUN chown $APP_USER:$APP_USER $APP_HOME
 USER $APP_USER
 
 # copy dependency
-COPY ./services/auth/poetry.lock  ./services/auth/pyproject.toml  ./services/auth/README.md $APP_HOME
+COPY ./services/auth/pyproject.toml  ./services/auth/README.md $APP_HOME
 
 # [OPTIONAL] Validate the project is properly configured
 RUN poetry check
