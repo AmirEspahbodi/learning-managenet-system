@@ -3,17 +3,17 @@ from user_agents import parse
 import sys
 import json
 
+from accounts.mail import BaseEmailMessage
+
 if sys.version_info[0] == 3:
     text_type = str
 from django.contrib.sites.models import Site
 from django.conf import settings
-from templated_mail.mail import BaseEmailMessage
 from accounts.app_settings import account_settings
 from accounts.models import EmailVerificationCode, PasswordResetCode
-from rest_framework.exceptions import ValidationError
 
 
-# from django.core.exceptions import ObjectDoesNotExist
+# from django.utils.exceptions import ObjectDoesNotExist
 # from django.utils.http import urlsafe_base64_encode
 # from django.contrib.auth.tokens import PasswordResetTokenGenerator
 # from django.utils.encoding import force_bytes

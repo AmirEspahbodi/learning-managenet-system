@@ -1,6 +1,5 @@
 from datetime import timedelta
 from hashlib import sha3_256
-from rest_framework.settings import api_settings
 
 
 class TokenSettings:
@@ -13,7 +12,7 @@ class TokenSettings:
     MIN_REFRESH_INTERVAL: int = 60
     AUTH_HEADER_PREFIX: str = "Token"
     TOKEN_PREFIX: str = ""
-    EXPIRY_DATETIME_FORMAT: str = api_settings.DATETIME_FORMAT
+    EXPIRY_DATETIME_FORMAT: str = ""
 
 
 token_settings = TokenSettings()
