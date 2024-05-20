@@ -1,11 +1,9 @@
 import re
 from django.core import validators
+from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
-from django.conf import settings
 from accounts.app_settings import account_settings
-from rest_framework.exceptions import ValidationError
-from rest_framework.serializers import as_serializer_error
 
 
 @deconstructible
@@ -75,7 +73,6 @@ def PostalCodeValidator(value):
 
 # used in serrializers
 def validate_password(password):
-    password
     if len(password) < account_settings.PASSWORD_MIN_LENGTH:
         raise ValidationError(
             [

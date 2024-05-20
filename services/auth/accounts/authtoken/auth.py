@@ -10,11 +10,6 @@ import binascii
 from django.utils import timezone
 
 from django.utils.translation import gettext_lazy as _
-from rest_framework import exceptions
-from rest_framework.authentication import (
-    BaseAuthentication,
-    get_authorization_header,
-)
 
 from accounts.authtoken.crypto import hash_token
 from accounts.authtoken.models import AuthToken
@@ -22,7 +17,7 @@ from accounts.authtoken.app_settings import CONSTANTS, token_settings
 from accounts.authtoken.signals import token_expired
 
 
-class TokenAuthentication(BaseAuthentication):
+class TokenAuthentication:
     """
     This authentication scheme uses Knox AuthTokens for authentication.
 

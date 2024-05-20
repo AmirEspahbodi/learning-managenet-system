@@ -16,7 +16,7 @@ from accounts.validators import (
     PostalCodeValidator,
 )
 from phonenumber_field import modelfields
-from core.db.mixins.timestamp import TimeStampMixin
+from utils.db.mixins.timestamp import TimeStampMixin
 
 
 def create_username():
