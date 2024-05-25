@@ -6,6 +6,7 @@
         <entryData>
           <resourceRoots>
             <path value="file://$PROJECT_DIR$/src/auth" />
+            <path value="file://$PROJECT_DIR$/services/account" />
           </resourceRoots>
         </entryData>
       </entry>

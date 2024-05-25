@@ -1,19 +1,20 @@
 services:
-  auth_api:
-    container_name: auth_api
+  account_api:
+    container_name: account_api
     build:
       context: .
-      dockerfile: docker/auth.Dockerfile
-    command: poetry run python auth/manage.py runserver 0.0.0.0:8082
+      dockerfile: docker/account.Dockerfile
+    command: poetry run python account/manage.py runserver 0.0.0.0:8082
 #    command: sleep infinity
     volumes:
-      - ./services/auth/accounts/:/home/python_user/auth/accounts/
-      - ./services/auth/django_core/:/home/python_user/auth/django_core/
-      - ./services/auth/utils/:/home/python_user/auth/utils/
+      - ./services/account/accounts/:/home/python_user/account/accounts/
+      - ./services/account/django_core/:/home/python_user/account/django_core/
+      - ./services/account/utils/:/home/python_user/account/utils/
+      - ./services/account/rest_api/:/home/python_user/account/rest_api/
     ports:
       - 8082:8082
     env_file:
-      - ./services/auth/.env
+      - ./services/account/.env
     depends_on:
       - postgres
     links:

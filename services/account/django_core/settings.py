@@ -33,7 +33,7 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 # Application definition
 INSTALLED_APPS = [
     # "django.contrib.admin",
-    "django.contrib.auth",
+    # "django.contrib.auth",
     "django.contrib.contenttypes",
     # "django.contrib.sessions",
     # "django.contrib.messages",
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "phonenumber_field",
     "accounts",
     "accounts.authtoken",
+    "permissions",
 ]
 
 MIDDLEWARE = [

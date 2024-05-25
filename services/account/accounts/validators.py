@@ -103,8 +103,7 @@ def validate_password(password):
         password_errors.append("Password must contain numbers")
     if not has_other:
         password_errors.append("Password must contain at least one other character")
-    if password_errors:
-        raise ValidationError(password_errors)
+    return password_errors
 
 
 def validate_6_digit_code(value):
