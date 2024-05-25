@@ -1,8 +1,8 @@
 from django.urls import path
-from accounts.apis import views
+from accounts.apis.signup.view import UserSignUpL1APIView
 
 urlpatterns = [
-    path("signup-l1/", views.UserRegisterL1APIView.as_view(), name="user_register_l1"),
+    path("signup-l1/", UserSignUpL1APIView.as_view(), name="user_register_l1"),
     # path("token_status/", views.AuthTokenVarifyApiView.as_view(), name="token_status"),
     # path("signup_l2/", views.UserRegisterL2APIView.as_view(), name="user_register_l1"),
     # path("login/", views.UserLoginAPIView.as_view(), name="user_login"),

@@ -286,13 +286,13 @@ def setUp_user_verification_code(VerificationCode, Email, user, request):
     )
 
 
-def setUp_user_email_verification_code(user, request=None):
+def setup_user_email_verification_code(user, request=None):
     return setUp_user_verification_code(
         EmailVerificationCode, ActivationEmail, user, request
     )
 
 
-def setUp_user_password_reset_verification_code(user, request=None):
+def setup_user_password_reset_verification_code(user, request=None):
     return setUp_user_verification_code(
         PasswordResetCode, PasswordResetEmail, user, request
     )
