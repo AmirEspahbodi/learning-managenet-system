@@ -284,20 +284,6 @@ files = [
 ]
 
 [[package]]
-name = "django-ipware"
-version = "7.0.1"
-description = "A Django application to retrieve user's IP address"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "django-ipware-7.0.1.tar.gz", hash = "sha256:d9ec43d2bf7cdf216fed8d494a084deb5761a54860a53b2e74346a4f384cff47"},
-    {file = "django_ipware-7.0.1-py2.py3-none-any.whl", hash = "sha256:db16bbee920f661ae7f678e4270460c85850f03c6761a4eaeb489bdc91f64709"},
-]
-
-[package.dependencies]
-python-ipware = ">=2.0.3"
-
-[[package]]
 name = "django-phonenumber-field"
 version = "7.3.0"
 description = "An international phone number field for django models."
@@ -1169,4 +1155,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a895415384171f198b1aed7ad662ebc11339f5e0d1e8feee3c023349a8e4fd27"
+content-hash = "94cfe351cf65fe8d53535e29cc147b66d3612f23c0bedc750257fc2a160a1b5b"

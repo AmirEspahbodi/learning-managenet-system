@@ -38,7 +38,7 @@ class AuthToken(models.Model):
         User,
         null=False,
         blank=False,
-        related_name="auth_token_set",
+        related_name="user_auth_token",
         on_delete=models.CASCADE,
     )
 
@@ -55,21 +55,25 @@ class AuthToken(models.Model):
 
 class AuthTokenExtra(models.Model):
     authToken = models.OneToOneField(
-        AuthToken, primary_key=True, on_delete=models.CASCADE
+        AuthToken, primary_key=True, on_delete=models.DO_NOTHING
     )
-    ip_address = models.GenericIPAddressField(
-        _("The IP address of this session"),
+    user = models.ForeignKey(
+        User,
+        related_name="user_auth_token_extra",
+        on_delete=models.CASCADE,
+    )
+    ip_address = models.TextField(
+        _("The IP address of user when registered"),
         default="",
         blank=True,
         null=True,
     )
-    created = models.DateTimeField(auto_now_add=True)
-    user_agent = models.CharField(
-        max_length=256,
-        verbose_name=_("HTTP User Agent"),
+    user_agent = models.TextField(
+        _("HTTP User Agent"),
         default="",
         blank=True,
     )
+    created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "auth_token_extra"

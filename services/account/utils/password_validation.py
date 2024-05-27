@@ -1,129 +1,26 @@
-import functools
+import collections
 import gzip
 import re
 from difflib import SequenceMatcher
 from pathlib import Path
-
-from django.conf import settings
-from django.core.exceptions import (
-    FieldDoesNotExist,
-    ImproperlyConfigured,
-    ValidationError,
-)
 from django.utils.functional import cached_property, lazy
-from django.utils.html import format_html, format_html_join
-from django.utils.module_loading import import_string
-from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 
 
-@functools.cache
-def get_default_password_validators():
-    return get_password_validators(settings.AUTH_PASSWORD_VALIDATORS)
+def validate_password(password, first_name, last_name, email, phone_number):
 
-
-def get_password_validators(validator_config):
-    validators = []
-    for validator in validator_config:
-        try:
-            klass = import_string(validator["NAME"])
-        except ImportError:
-            msg = (
-                "The module in NAME could not be imported: %s. Check your "
-                "AUTH_PASSWORD_VALIDATORS setting."
-            )
-            raise ImproperlyConfigured(msg % validator["NAME"])
-        validators.append(klass(**validator.get("OPTIONS", {})))
-
-    return validators
-
-
-def validate_password(password, user=None, password_validators=None):
-    """
-    Validate that the password meets all validator requirements.
-
-    If the password is valid, return ``None``.
-    If the password is invalid, raise ValidationError with all error messages.
-    """
-    errors = []
-    if password_validators is None:
-        password_validators = get_default_password_validators()
-    for validator in password_validators:
-        try:
-            validator.validate(password, user)
-        except ValidationError as error:
-            errors.append(error)
-    if errors:
-        raise ValidationError(errors)
-
-
-def password_changed(password, user=None, password_validators=None):
-    """
-    Inform all validators that have implemented a password_changed() method
-    that the password has been changed.
-    """
-    if password_validators is None:
-        password_validators = get_default_password_validators()
-    for validator in password_validators:
-        password_changed = getattr(validator, "password_changed", lambda *a: None)
-        password_changed(password, user)
-
-
-def password_validators_help_texts(password_validators=None):
-    """
-    Return a list of all help texts of all configured validators.
-    """
-    help_texts = []
-    if password_validators is None:
-        password_validators = get_default_password_validators()
-    for validator in password_validators:
-        help_texts.append(validator.get_help_text())
-    return help_texts
-
-
-def _password_validators_help_text_html(password_validators=None):
-    """
-    Return an HTML string with all help texts of all configured validators
-    in an <ul>.
-    """
-    help_texts = password_validators_help_texts(password_validators)
-    help_items = format_html_join(
-        "", "<li>{}</li>", ((help_text,) for help_text in help_texts)
+    error = []
+    MinimumLengthValidator().validate(password, error)
+    UserAttributeSimilarityValidator().validate(
+        password,
+        error,
+        collections.namedtuple(
+            "User", ["first_name", "last_name", "email", "phone_number"]
+        )(first_name, last_name, email, phone_number),
     )
-    return format_html("<ul>{}</ul>", help_items) if help_items else ""
-
-
-password_validators_help_text_html = lazy(_password_validators_help_text_html, str)
-
-
-class MinimumLengthValidator:
-    """
-    Validate that the password is of a minimum length.
-    """
-
-    def __init__(self, min_length=8):
-        self.min_length = min_length
-
-    def validate(self, password, user=None):
-        if len(password) < self.min_length:
-            raise ValidationError(
-                ngettext(
-                    "This password is too short. It must contain at least "
-                    "%(min_length)d character.",
-                    "This password is too short. It must contain at least "
-                    "%(min_length)d characters.",
-                    self.min_length,
-                ),
-                code="password_too_short",
-                params={"min_length": self.min_length},
-            )
-
-    def get_help_text(self):
-        return ngettext(
-            "Your password must contain at least %(min_length)d character.",
-            "Your password must contain at least %(min_length)d characters.",
-            self.min_length,
-        ) % {"min_length": self.min_length}
+    CommonPasswordValidator().validate(password, error)
+    HasUpperLowerNumericOtherPasswordValidator.validate(password, error)
+    return error
 
 
 def exceeds_maximum_length_ratio(password, max_similarity, value):
@@ -156,18 +53,25 @@ def exceeds_maximum_length_ratio(password, max_similarity, value):
     return pwd_len >= 10 * value_len and value_len < length_bound_similarity
 
 
+class MinimumLengthValidator:
+    def __init__(self, min_length=8):
+        self.min_length = min_length
+
+    def validate(self, password, error: list):
+        if len(password) < self.min_length:
+            error.append(
+                f"This password is too short. It must contain at least {self.min_length}character."
+            )
+
+    def get_help_text(self):
+        return ngettext(
+            "Your password must contain at least %(min_length)d character.",
+            "Your password must contain at least %(min_length)d characters.",
+            self.min_length,
+        ) % {"min_length": self.min_length}
+
+
 class UserAttributeSimilarityValidator:
-    """
-    Validate that the password is sufficiently different from the user's
-    attributes.
-
-    If no specific attributes are provided, look at a sensible list of
-    defaults. Attributes that don't exist are ignored. Comparison is made to
-    not only the full attribute value, but also its components, so that, for
-    example, a password is validated against either part of an email address,
-    as well as the full address.
-    """
-
     DEFAULT_USER_ATTRIBUTES = ("username", "first_name", "last_name", "email")
 
     def __init__(self, user_attributes=DEFAULT_USER_ATTRIBUTES, max_similarity=0.7):
@@ -176,7 +80,7 @@ class UserAttributeSimilarityValidator:
             raise ValueError("max_similarity must be at least 0.1")
         self.max_similarity = max_similarity
 
-    def validate(self, password, user=None):
+    def validate(self, password, error: list, user=None):
         if not user:
             return
 
@@ -196,35 +100,12 @@ class UserAttributeSimilarityValidator:
                     SequenceMatcher(a=password, b=value_part).quick_ratio()
                     >= self.max_similarity
                 ):
-                    try:
-                        verbose_name = str(
-                            user._meta.get_field(attribute_name).verbose_name
-                        )
-                    except FieldDoesNotExist:
-                        verbose_name = attribute_name
-                    raise ValidationError(
-                        _("The password is too similar to the %(verbose_name)s."),
-                        code="password_too_similar",
-                        params={"verbose_name": verbose_name},
+                    error.append(
+                        "Your password can’t be too similar to your other personal information."
                     )
-
-    def get_help_text(self):
-        return _(
-            "Your password can’t be too similar to your other personal information."
-        )
 
 
 class CommonPasswordValidator:
-    """
-    Validate that the password is not a common password.
-
-    The password is rejected if it occurs in a provided list of passwords,
-    which may be gzipped. The list Django ships with contains 20000 common
-    passwords (lowercased and deduplicated), created by Royce Williams:
-    https://gist.github.com/roycewilliams/226886fd01572964e1431ac8afc999ce
-    The password list must be lowercased to match the comparison in validate().
-    """
-
     @cached_property
     def DEFAULT_PASSWORD_LIST_PATH(self):
         return Path(__file__).resolve().parent / "common-passwords.txt.gz"
@@ -239,28 +120,40 @@ class CommonPasswordValidator:
             with open(password_list_path) as f:
                 self.passwords = {x.strip() for x in f}
 
-    def validate(self, password, user=None):
+    def validate(self, password, error: list):
         if password.lower().strip() in self.passwords:
-            raise ValidationError(
-                _("This password is too common."),
-                code="password_too_common",
-            )
-
-    def get_help_text(self):
-        return _("Your password can’t be a commonly used password.")
+            error.append("Your password can’t be a commonly used password.")
 
 
-class NumericPasswordValidator:
-    """
-    Validate that the password is not entirely numeric.
-    """
-
-    def validate(self, password, user=None):
-        if password.isdigit():
-            raise ValidationError(
-                _("This password is entirely numeric."),
-                code="password_entirely_numeric",
-            )
-
-    def get_help_text(self):
-        return _("Your password can’t be entirely numeric.")
+class HasUpperLowerNumericOtherPasswordValidator:
+    @staticmethod
+    def validate(password, error: list):
+        has_upper = False
+        has_lower = False
+        has_number = False
+        has_other = False
+        for p in password:
+            if p.isdecimal():
+                has_number = True
+            elif p.islower():
+                has_lower = True
+            elif p.isupper():
+                has_upper = True
+            else:
+                has_other = True
+        msg = "Password must contain "
+        if not has_upper and not has_lower:
+            msg = "uppercase and lowercase letters "
+        elif not has_upper:
+            msg += "uppercase letters "
+        elif not has_lower:
+            msg += "lowercase letters "
+        if not has_upper or not has_lower:
+            msg += "and "
+        if not has_number:
+            msg += "numbers"
+        if not has_upper or not has_lower or not has_number:
+            msg += "and "
+        if not has_other:
+            msg += "least one other character"
+        error.append(msg)

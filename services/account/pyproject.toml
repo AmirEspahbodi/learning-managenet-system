@@ -15,9 +15,9 @@ django-phonenumbers = "^1.0.1"
 user-agents = "^2.2.0"
 gunicorn = "^22.0.0"
 uvicorn = "^0.29.0"
-django-ipware = "^7.0.1"
 orjson = "^3.10.3"
 pydantic = {extras = ["email"], version = "^2.7.1"}
+python-ipware = "^3.0.0"
 
 
 [build-system]
