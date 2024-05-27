@@ -34,11 +34,10 @@ class VerificationStatus(models.IntegerChoices):
 class User(TimeStampMixin):
     password = models.CharField(_("password"), max_length=128)
     last_login = models.DateTimeField(_("last login"), blank=True, null=True)
-    first_name = models.CharField(_("first name"), max_length=150, blank=True)
-    last_name = models.CharField(_("last name"), max_length=150, blank=True)
+    first_name = models.CharField(_("first name"), max_length=150)
+    last_name = models.CharField(_("last name"), max_length=150)
     email = models.EmailField(
         _("email address"),
-        unique=True,
         error_messages={
             "unique": _("A user with that email already exists."),
         },
@@ -46,7 +45,6 @@ class User(TimeStampMixin):
     username = models.CharField(
         _("username"),
         max_length=150,
-        unique=True,
         help_text=_("Required. 150 characters or fewer. Letters, digits and _ only."),
         validators=[UnicodeUsernameValidator()],
         error_messages={
@@ -54,7 +52,6 @@ class User(TimeStampMixin):
         },
     )
     phone_number = modelfields.PhoneNumberField(
-        unique=True,
         error_messages={
             "unique": _("A user with that phone number already exists."),
         },
@@ -101,12 +98,6 @@ class User(TimeStampMixin):
     def __str__(self):
         return self.get_username()
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self._password is not None:
-            password_validation.password_changed(self._password, self)
-            self._password = None
-
     def get_username(self):
         """Return the username for this User."""
         return getattr(self, self.USERNAME_FIELD)
@@ -130,9 +121,9 @@ class User(TimeStampMixin):
         """
         return True
 
-    def set_password(self, raw_password):
-        self.password = make_password(raw_password)
-        self._password = raw_password
+    @staticmethod
+    def set_password(raw_password):
+        return make_password(raw_password)
 
     def check_password(self, raw_password):
         """
@@ -198,7 +189,7 @@ class User(TimeStampMixin):
 
 class UserExtra(TimeStampMixin):
     user = models.OneToOneField(
-        User, primary_key=True, on_delete=models.CASCADE, related_name="user_info"
+        User, primary_key=True, on_delete=models.CASCADE, related_name="user_extra"
     )
     national_code = models.CharField(
         max_length=10, validators=[NationalCodeValidator], blank=True, null=True
@@ -215,6 +206,18 @@ class UserExtra(TimeStampMixin):
     father_name = models.CharField(max_length=100, blank=True, null=True)
     home_phone_number = models.CharField(
         max_length=11, validators=[HomePhoneNumberValidator], blank=True, null=True
+    )
+    ip_address = models.TextField(
+        _("The IP address of user when registered"),
+        default="",
+        blank=True,
+        null=True,
+    )
+    user_agent = models.TextField(
+        _("HTTP User Agent"),
+        default="",
+        blank=True,
+        null=True,
     )
 
     class Meta:

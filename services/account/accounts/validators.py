@@ -71,41 +71,6 @@ def PostalCodeValidator(value):
         raise ValueError("postal code is not valid")
 
 
-# used in serrializers
-def validate_password(password):
-    if len(password) < account_settings.PASSWORD_MIN_LENGTH:
-        raise ValidationError(
-            [
-                "Password must be a minimum of {0} characters.".format(
-                    account_settings.PASSWORD_MIN_LENGTH
-                )
-            ]
-        )
-    has_upper = False
-    has_lower = False
-    has_number = False
-    has_other = False
-    for p in password:
-        if p.isdecimal():
-            has_number = True
-        elif p.islower():
-            has_lower = True
-        elif p.isupper():
-            has_upper = True
-        else:
-            has_other = True
-    password_errors = []
-    if not has_upper:
-        password_errors.append("Password must contain uppercase letters")
-    if not has_lower:
-        password_errors.append("Password must contain lowercase letters")
-    if not has_number:
-        password_errors.append("Password must contain numbers")
-    if not has_other:
-        password_errors.append("Password must contain at least one other character")
-    return password_errors
-
-
 def validate_6_digit_code(value):
     int_value = int(value)
     if not (int_value < 999999 and int_value > 100000):
