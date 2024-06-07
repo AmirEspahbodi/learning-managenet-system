@@ -14,7 +14,6 @@ from accounts.validators import (
     PostalCodeValidator,
 )
 from phonenumber_field import modelfields
-from utils import password_validation
 from utils.hasher import check_password, is_password_usable, make_password
 
 
@@ -38,24 +37,14 @@ class User(TimeStampMixin):
     last_name = models.CharField(_("last name"), max_length=150)
     email = models.EmailField(
         _("email address"),
-        error_messages={
-            "unique": _("A user with that email already exists."),
-        },
     )
     username = models.CharField(
         _("username"),
         max_length=150,
         help_text=_("Required. 150 characters or fewer. Letters, digits and _ only."),
         validators=[UnicodeUsernameValidator()],
-        error_messages={
-            "unique": _("A user with that username already exists."),
-        },
     )
-    phone_number = modelfields.PhoneNumberField(
-        error_messages={
-            "unique": _("A user with that phone number already exists."),
-        },
-    )
+    phone_number = modelfields.PhoneNumberField()
     is_active = models.BooleanField(
         _("active"),
         default=True,

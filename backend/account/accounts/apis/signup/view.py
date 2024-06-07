@@ -1,8 +1,8 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from django.db import transaction, IntegrityError
 
+from permissions.models import UserRole
 from rest_api import status
 from rest_api.api_view import CreateAPIView
 from utils.transaction import AsyncAtomicContextManager
@@ -33,6 +33,7 @@ class UserSignUpL1APIView(CreateAPIView[SignupL1Schema]):
                     ip_address=get_user_ip(request),
                     user_agent=get_user_agent(request),
                 )
+                # add role and permissions to user
         except BaseException:
             return JsonResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
