@@ -2,23 +2,26 @@ services:
   account_api:
     container_name: account_api
     build:
-      context: .
+      context: ./backend
       dockerfile: docker/account.Dockerfile
-    command: poetry run python account/manage.py runserver 0.0.0.0:8082
+    command: poetry run python account/main.py
 #    command: sleep infinity
     volumes:
-      - ./services/account/accounts/:/home/python_user/account/accounts/
-      - ./services/account/django_core/:/home/python_user/account/django_core/
-      - ./services/account/utils/:/home/python_user/account/utils/
-      - ./services/account/rest_api/:/home/python_user/account/rest_api/
+      - ./backend/account/accounts/:/home/python_user/account/accounts/
+      - ./backend/account/django_core/:/home/python_user/account/django_core/
+      - ./backend/account/utils/:/home/python_user/account/utils/
+      - ./backend/account/rest_api/:/home/python_user/account/rest_api/
+      - ./backend/account/permissions/:/home/python_user/account/permissions/
     ports:
-      - 8082:8082
+      - "8081:8081"
     env_file:
-      - ./services/account/.env
+      - backend/account/.env
     depends_on:
       - postgres
     links:
-      - "postgres:pgsql-server"
+      - postgres:pgsql-server
+    networks:
+      - backend
 
   postgres:
     container_name: postgres
@@ -27,10 +30,10 @@ services:
     env_file:
       - ./.env
     volumes:
-    - postgres_data:/var/lib/postgresql/data
-    - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
-    ports:
-    - "5432:5432"
+      - postgres_data:/var/lib/postgresql/data
+      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+    networks:
+      - backend
 
   pgadmin:
     container_name: pgadmin
@@ -40,14 +43,52 @@ services:
       - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
       - PGADMIN_DEFAULT_PASSWORD=admin
     ports:
-      - "5050:80"
+      - "5050:5050"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - postgres
-    links:
-      - "postgres:pgsql-server"
+    networks:
+      - backend
+
+  redis:
+    image: redis:7.2.5-alpine3.20
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: nginx.Dockerfile
+    container_name: nginx
+    ports:
+      - "3000:3000"
+    depends_on:
+      - account_api
+    networks:
+      - frontend
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: frontend.Dockerfile
+    container_name: frontend
+    ports:
+      - "80:80"
+    networks:
+      - frontend
 
 volumes:
   postgres_data:
   pgadmin_data:
+  redis-data:
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
