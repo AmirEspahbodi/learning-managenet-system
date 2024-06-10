@@ -72,13 +72,23 @@ services:
       - frontend
       - backend
 
-  frontend:
+  users_frontend:
     build:
-      context: ./frontend
-      dockerfile: frontend.Dockerfile
+      context: ./frontend/users
+      dockerfile: users.Dockerfile
     container_name: frontend
     ports:
-      - "80:80"
+      - "5002:5002"
+    networks:
+      - frontend
+
+  admin_panel:
+    build:
+      context: ./frontend/admin
+      dockerfile: admin.Dockerfile
+    container_name: admin_panel
+    ports:
+      - "5001:5001"
     networks:
       - frontend
 
