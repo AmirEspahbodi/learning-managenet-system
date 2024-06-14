@@ -73,22 +73,42 @@ services:
       - backend
 
   users_frontend:
+    container_name: users_frontend
     build:
-      context: ./frontend/users
-      dockerfile: users.Dockerfile
-    container_name: frontend
+      context: ./frontend
+      dockerfile: docker/users.Dockerfile
+      target: dev
+    restart: always
+    command: yarn dev --port 3001
+#    command: sleep infinity
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./frontend/users:/users
+      - /users/node_modules
+      - /users/.next
     ports:
-      - "5002:5002"
+      - 3001:3001
     networks:
       - frontend
 
   admin_panel:
+    container_name: admin_frontend
     build:
-      context: ./frontend/admin
-      dockerfile: admin.Dockerfile
-    container_name: admin_panel
+      context: ./frontend
+      dockerfile: docker/admin.Dockerfile
+      target: dev
+    restart: always
+    command: yarn dev --port 3002
+#    command: sleep infinity
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./frontend/admin/:/admin
+      - /admin/node_modules
+      - /admin/.next
     ports:
-      - "5001:5001"
+      - 3002:3002
     networks:
       - frontend
 
